@@ -62,10 +62,11 @@ def sync_social(github, checkout, repo, pages, asset_ids=None):
 
     manifest = checkout / 'social.json'
     entries = read_json(manifest) if manifest.is_file() else {}
-    works = [
-        item for item in read_json(checkout / 'catalog.json')
-        if item['id'] not in entries and (asset_ids is None or item['id'] in asset_ids)
-    ]
+    catalog = read_json(checkout / 'catalog.json')
+    catalog.extend(read_json(path) for path in sorted((checkout / '_data' / 'works').glob('*.json')))
+    works = [item for item in catalog if item['id'] not in entries
+             and (asset_ids is None or item['id'] in asset_ids)
+             and not (checkout / 'models' / item['id'] / 'social.json').is_file()]
     if not works:
         return False
     if any(not re.fullmatch(r'[a-z0-9-]+', item['id']) for item in works):
@@ -119,7 +120,6 @@ def sync_social(github, checkout, repo, pages, asset_ids=None):
                     ),
                 }},
             })
-        entries[asset_id] = {'discussion': discussion['number'], 'gist': gist['id']}
-
-    write_json(manifest, entries)
+        destination = checkout / 'models' / asset_id / 'social.json'
+        write_json(destination, {'discussion': discussion['number'], 'gist': gist['id']})
     return True

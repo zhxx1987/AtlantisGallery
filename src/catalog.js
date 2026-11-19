@@ -1,8 +1,16 @@
-export async function loadCatalog() {
-  const response = await fetch('./catalog.json', { cache: 'no-cache' });
+async function readEntries(path) {
+  const response = await fetch(path, { cache: 'no-cache' });
   if (!response.ok) throw new Error('Could not load the gallery catalog.');
   const catalog = await response.json();
   if (!Array.isArray(catalog)) throw new Error('Invalid gallery catalog format.');
+  return catalog;
+}
+
+export async function loadCatalog() {
+  const [legacy, works] = await Promise.all([readEntries('./catalog.json'), readEntries('./entries.json')]);
+  works.sort((a, b) => (b.publishedAt || '').localeCompare(a.publishedAt || '') || a.id.localeCompare(b.id));
+  const catalog = [...works, ...legacy];
+  if (new Set(catalog.map(work => work.id)).size !== catalog.length) throw new Error('Duplicate Gallery work ID.');
   return catalog;
 }
 

@@ -19,6 +19,8 @@ from uuid import uuid4
 from .package_asset import add_to_catalog, catalog_entry, check_catalog_slot, stage_package
 from .creator_storage import hosting_urls, publish_creator_assets
 from .social import sync_social
+from .requirements_guide import verify_requirements
+import hashlib
 
 
 OWNER = 'zhxx1987'
@@ -142,7 +144,7 @@ class GitHub:
         upstream = f'https://github.com/{REPO}.git'
         # The shared repository may contain legacy models. Fetch only the index and small work folder.
         git('clone', '--quiet', '--depth', '1', '--filter=blob:none', '--sparse', '--branch', MAIN, upstream, str(checkout))
-        git('sparse-checkout', 'set', f'models/{asset_id}', cwd=checkout)
+        git('sparse-checkout', 'set', '_data/works', f'models/{asset_id}', cwd=checkout)
         planned_hosting = hosting_urls(self.login, plan)
         check_catalog_slot(checkout, asset_id, catalog_entry(asset_id, plan, planned_hosting))
         branch_prefix = f"gallery/{asset_id}-{plan['approval_digest'][:12]}-"
@@ -161,16 +163,24 @@ class GitHub:
                     'asset_repository_url': hosting['repository_url']}
 
         title = plan['metadata']['title']
-        paths = ['catalog.json', f'models/{asset_id}'] if asset_added else []
+        paths = [f'_data/works/{asset_id}.json', f'models/{asset_id}'] if asset_added else []
         if social_added:
-            paths.append('social.json')
+            paths.append(f'models/{asset_id}/social.json')
         git('add', '--', *paths, cwd=checkout)
         message = f'Add Gallery work: {title}' if asset_added else f'Add social links for {title}'
         git('-c', f'user.name={self.login}', '-c', f'user.email={self.email}',
             'commit', '--quiet', '-m', message, cwd=checkout)
         branch = MAIN if owner else branch_prefix + uuid4().hex[:8]
-        git('-c', f'credential.https://github.com.username={self.login}', 'push',
-            upstream if owner else fork, f'HEAD:refs/heads/{branch}', cwd=checkout)
+        for attempt in range(4):
+            try:
+                git('-c', f'credential.https://github.com.username={self.login}', 'push',
+                    upstream if owner else fork, f'HEAD:refs/heads/{branch}', cwd=checkout)
+                break
+            except RuntimeError as error:
+                if not owner or attempt == 3 or not any(s in str(error) for s in ('non-fast-forward', 'fetch first', 'failed to update ref')):
+                    raise
+                git('fetch', 'origin', MAIN, cwd=checkout)
+                git('rebase', 'FETCH_HEAD', cwd=checkout)
         if owner:
             revision = git('rev-parse', 'HEAD', cwd=checkout)
             return {'status': 'published_pending_pages', 'id': asset_id, 'gallery_url': work_url,
@@ -188,17 +198,25 @@ class GitHub:
                 'gallery_url_after_merge': work_url, 'asset_repository_url': hosting['repository_url']}
 
 
-def prepare_gallery_upload(manifest_path: str) -> dict[str, Any]:
+def reviewed_plan(manifest_path, package, requirements_digest):
+    verify_requirements(requirements_digest)
+    plan = stage_package(manifest_path, package)
+    plan['requirements_digest'] = requirements_digest
+    plan['approval_digest'] = hashlib.sha256((plan['approval_digest'] + requirements_digest).encode()).hexdigest()
+    return plan
+
+
+def prepare_gallery_upload(manifest_path: str, requirements_digest: str) -> dict[str, Any]:
     """Validate a local submission.json and list every file and archive member that would be public.
 
     Show the creator this plan and ask for explicit public-upload approval. Keep the approval_digest
     for publish_gallery_asset. This tool uses local files and does not contact GitHub.
     """
     with tempfile.TemporaryDirectory(prefix='atlantis-gallery-') as folder:
-        return stage_package(manifest_path, Path(folder) / 'package')
+        return reviewed_plan(manifest_path, Path(folder) / 'package', requirements_digest)
 
 
-def publish_gallery_asset(manifest_path: str, approval_digest: str, confirm_public: bool = False) -> dict[str, Any]:
+def publish_gallery_asset(manifest_path: str, approval_digest: str, requirements_digest: str, confirm_public: bool = False) -> dict[str, Any]:
     """Upload approved resources to the creator's own repository Pages and Releases.
 
     Set confirm_public only after the creator approves the exact plan from prepare_gallery_upload.
@@ -210,7 +228,7 @@ def publish_gallery_asset(manifest_path: str, approval_digest: str, confirm_publ
     with tempfile.TemporaryDirectory(prefix='atlantis-gallery-') as folder:
         temp = Path(folder)
         package = temp / 'package'
-        plan = stage_package(manifest_path, package)
+        plan = reviewed_plan(manifest_path, package, requirements_digest)
         if approval_digest != plan['approval_digest']:
             raise ValueError('The files or metadata changed. Prepare the upload and review the new plan.')
         return GitHub().submit(plan, package, temp)

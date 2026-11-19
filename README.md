@@ -5,13 +5,13 @@ The gallery shows 12 works per page. Each work page shows the creator and provid
 
 ## Run locally and deploy
 
-Run `python -m http.server 8080` from this directory and open `http://localhost:8080/`. The 3D viewer requires a browser with WebGPU support and a secure context. Localhost works for local previews. Three.js 0.186.0 ships with the site. Works that use Python load Pyodide 0.27.7 from jsDelivr on first use.
+Run `python publisher/serve.py 8080` from this directory and open `http://localhost:8080/`. The 3D viewer requires a browser with WebGPU support and a secure context. Localhost works for local previews. Three.js 0.186.0 ships with the site. Works that use Python load Pyodide 0.27.7 from jsDelivr on first use.
 
 Commit the project directory to a public GitHub repository. Under Settings → Pages, select the main branch and the repository root. Work links use `work.html?model=<id>` and gallery pagination uses `?page=2`. Existing work links to the gallery home redirect to the detail page.
 
 ## Work data
 
-Add each work to `catalog.json` with `id`, `title`, `creator`, `thumbnail`, `model`, and optional `description`, `interaction`, and `downloads` fields. Write titles, descriptions, download labels, and interaction labels in English. Use the creator's chosen display name. Downloads can link to an archive of the original USD and motion scripts, the modeling code for all parts, and the complete work-order JSON. Include external USD references and textures with their relative paths intact, or use USDZ.
+Add each new work to its own `_data/works/<asset-id>.json` with `id`, `title`, `creator`, `thumbnail`, `model`, and optional `description`, `interaction`, and `downloads` fields. Write titles, descriptions, download labels, and interaction labels in English. Use the creator's chosen display name. Downloads can link to an archive of the original USD and motion scripts, the modeling code for all parts, and the complete work-order JSON. Include external USD references and textures with their relative paths intact, or use USDZ.
 
 Each work links to its GitHub discussion for upvotes and comments and to a gist for favorites. Visitors can find their saved assets under GitHub's **Starred gists** while signed in.
 
@@ -61,3 +61,7 @@ Only explicitly listed files are packaged. The plan lists each public file, arch
 Before preparing the upload, convert all user-visible model interaction text to English in the Gallery copy: buttons, menus, fields, hints, keyboard/mouse help, tooltips, statuses, runtime messages and vehicle/viewport mode controls. Check interaction.json, Python/browser scripts and visible model operating text. Keep the creator's name, prim paths, joint/event IDs, binding keys, mappings and behavior. Operate the actual browser preview and verify English text and linked controls. Documentation and private conversations can remain in their original language.
 
 Atlantis updates distribute the publisher, sharing rules and public usage skill together. The WebGPU sharing button opens the guide; it does not itself upload files. Existing work downloads and social links remain supported.
+
+Read the live sharing guide with `atlantis_gallery_requirements` (standalone: `read_gallery_requirements`). Supply its `requirements_digest` to prepare and publish. Declare `operableVehicle` in submission.json. An operable vehicle must run inside the Gallery work page using its native controls or a packaged HTML `vehicleEntry`.
+
+Pages builds entries.json from the individual work records. The viewer also reads catalog.json for older works. To convert a clean older PR that only added records, fetch the target main branch, then run `python /path/to/updated/publisher/migrate_submission.py upstream/main` from the PR checkout. Add `--apply` to move its additions into individual files. Review and commit the migration, then merge upstream/main normally. Changed existing records or duplicate IDs need individual review.

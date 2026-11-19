@@ -6,6 +6,7 @@ from pathlib import Path, PurePosixPath
 import posixpath
 import re
 import shutil
+from datetime import datetime, timezone
 from urllib.parse import quote
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
@@ -82,8 +83,18 @@ def stage_package(manifest, output):
 
     model = data.get('model')
     preview = {model: relative_file(root, model, MODEL_TYPES)}
+    operable = data.get('operableVehicle')
+    if type(operable) is not bool:
+        raise ValueError('Declare operableVehicle as true for a vehicle with operating logic, or false otherwise.')
+    entry = data.get('vehicleEntry')
+    if entry is not None:
+        if not operable:
+            raise ValueError('vehicleEntry requires operableVehicle=true.')
+        preview[entry] = relative_file(root, entry, {'.html'})
+        metadata['vehicleEntry'] = 'preview/' + quote(entry)
+    dependencies = DEPENDENCY_TYPES | {'.js', '.mjs', '.css', '.wasm', '.html', '.ogg', '.mp3', '.wav'} if entry else DEPENDENCY_TYPES
     for name in files_field(data, 'previewFiles'):
-        preview[name] = relative_file(root, name, DEPENDENCY_TYPES)
+        preview[name] = relative_file(root, name, dependencies)
     model_archive = preview | {
         name: relative_file(root, name)
         for name in files_field(data, 'modelFiles') + files_field(data, 'motionFiles')
@@ -95,6 +106,7 @@ def stage_package(manifest, output):
     if thumbnail.stat().st_size > MAX_THUMBNAIL:
         raise ValueError('Use a thumbnail no larger than 1 MiB. Only the thumbnail and catalog entry go to Gallery.')
     interaction = None
+    native_vehicle = False
     if data.get('interaction'):
         interaction = relative_file(root, data['interaction'], {'.json'})
         spec = read_json(interaction)
@@ -112,6 +124,7 @@ def stage_package(manifest, output):
             ):
                 raise ValueError('Use declarative actions or a Python profile already supported by Gallery.')
             if logic.get('schema') == 'atlantis-python-motion/1':
+                native_vehicle = logic.get('profile') == 'tiger-ii'
                 # Vehicle references are relative to the preview model, just as in the browser.
                 for field in ('module', 'config'):
                     reference = logic.get(field)
@@ -121,6 +134,10 @@ def stage_package(manifest, output):
                     if name not in preview:
                         raise ValueError(f'List the vehicle {field} in previewFiles: {name}')
         model_archive[data['interaction']] = interaction
+    if native_vehicle and not operable:
+        raise ValueError('Declare operableVehicle=true for this vehicle controller.')
+    if operable and not (entry or native_vehicle):
+        raise ValueError('An operable vehicle requires a packaged HTML vehicleEntry or a supported native vehicle controller.')
     work_order = None
     if data.get('workOrder'):
         work_order = relative_file(root, data['workOrder'], {'.json'})
@@ -162,7 +179,7 @@ def stage_package(manifest, output):
         'repository_owner': 'signed-in GitHub creator',
         'preview_host': 'creator repository GitHub Pages',
         'downloads_host': 'creator repository GitHub Releases',
-        'gallery_files': ['catalog.json (entry only)', 'models/<asset-id>/' + thumbnail_name],
+        'gallery_files': ['_data/works/<asset-id>.json', 'models/<asset-id>/' + thumbnail_name],
         'generated_creator_files': ['.atlantis-gallery.json', '.gitattributes', '.nojekyll', 'index.html', '<version>/publication.json'],
     }
     digest = hashlib.sha256(json.dumps({'metadata': metadata, 'storage': storage}, sort_keys=True).encode())
@@ -203,7 +220,7 @@ def catalog_entry(asset_id, plan, hosting):
     base = hosting['preview_base_url'].rstrip('/') + '/'
     entry = {'id': asset_id, **plan['metadata']}
     del entry['slug']
-    for field in ('model', 'interaction'):
+    for field in ('model', 'interaction', 'vehicleEntry'):
         if field in entry:
             entry[field] = base + entry[field]
     entry['thumbnail'] = f'./models/{asset_id}/' + entry['thumbnail']
@@ -218,20 +235,23 @@ def catalog_entry(asset_id, plan, hosting):
 def check_catalog_slot(checkout, asset_id, entry):
     catalog = read_json(checkout / 'catalog.json')
     existing = next((item for item in catalog if item['id'] == asset_id), None)
+    record = checkout / '_data' / 'works' / (asset_id + '.json')
+    if record.exists():
+        if existing:
+            raise ValueError(f'Duplicate catalog records for {asset_id}.')
+        existing = read_json(record)
+        existing.pop('publishedAt', None)
     if existing and existing != entry:
         raise ValueError(f'{asset_id} already exists. Pick a new slug to submit a new work.')
     destination = checkout / 'models' / asset_id
     if not existing and destination.exists():
         raise ValueError(f'{asset_id} already has Gallery files. Pick a new slug.')
+    return existing
 
 
 def add_to_catalog(checkout, asset_id, package, plan, hosting):
-    catalog_file = checkout / 'catalog.json'
-    catalog = read_json(catalog_file)
     entry = catalog_entry(asset_id, plan, hosting)
-    check_catalog_slot(checkout, asset_id, entry)
-
-    existing = next((item for item in catalog if item['id'] == asset_id), None)
+    existing = check_catalog_slot(checkout, asset_id, entry)
     destination = checkout / 'models' / asset_id
     if existing or destination.exists():
         thumbnail = destination / plan['metadata']['thumbnail']
@@ -242,6 +262,8 @@ def add_to_catalog(checkout, asset_id, package, plan, hosting):
 
     destination.mkdir(parents=True)
     shutil.copyfile(package / plan['metadata']['thumbnail'], destination / plan['metadata']['thumbnail'])
-    catalog.insert(0, entry)
-    write_json(catalog_file, catalog)
+    records = checkout / '_data' / 'works'
+    records.mkdir(parents=True, exist_ok=True)
+    entry['publishedAt'] = datetime.now(timezone.utc).isoformat()
+    write_json(records / (asset_id + '.json'), entry)
     return True

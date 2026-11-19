@@ -40,26 +40,6 @@
     "assetRepository": "https://github.com/Viktologist/atlantis-iphone-duo"
   },
   {
-    "id": "ember-29",
-    "title": "Ember 29 · Mountain Bike and Trail Ride",
-    "creator": "zhxx1987",
-    "description": "Explore the steering and 100 mm suspension fork of this 29-inch hardtail. Ride the trail with a ten-speed chain drive, freewheel, braking and bunny hops at https://zhxx1987.github.io/atlantis-ember-29/ride/",
-    "model": "https://zhxx1987.github.io/atlantis-ember-29/gallery-0be900fbaa6358b9b4fdc733cd25e2b3a78a323915005fd64d7f56a966b90e0f/preview/hardtail.glb",
-    "thumbnail": "./models/ember-29/preview.jpg",
-    "downloads": [
-      {
-        "label": "Download Model and Motion Files",
-        "url": "https://github.com/zhxx1987/atlantis-ember-29/releases/download/gallery-0be900fbaa6358b9b4fdc733cd25e2b3a78a323915005fd64d7f56a966b90e0f/model.zip"
-      },
-      {
-        "label": "Download Modeling Code",
-        "url": "https://github.com/zhxx1987/atlantis-ember-29/releases/download/gallery-0be900fbaa6358b9b4fdc733cd25e2b3a78a323915005fd64d7f56a966b90e0f/modeling-code.zip"
-      }
-    ],
-    "interaction": "https://zhxx1987.github.io/atlantis-ember-29/gallery-0be900fbaa6358b9b4fdc733cd25e2b3a78a323915005fd64d7f56a966b90e0f/interaction.json",
-    "assetRepository": "https://github.com/zhxx1987/atlantis-ember-29"
-  },
-  {
     "id": "qwanp-cordless-vacuum-r5",
     "title": "Cordless Vacuum R5",
     "creator": "qwanp",

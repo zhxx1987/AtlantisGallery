@@ -17,6 +17,7 @@
   <main class="work publish-guide">
     <a class="back-link" href="./">← Back to Gallery</a>
     <h1>Share a Model</h1>
+    <p>Before every submission, read this live page with <code>atlantis_gallery_requirements</code> (standalone MCP: <code>read_gallery_requirements</code>). Use the returned <code>requirements_digest</code> for preparation and publication. If these requirements change, read them again and review the updated plan.</p>
     <p>Update your existing Atlantis client. When a modeling task is ready, ask your Atlantis assistant to share it, then confirm the files you want to make public.</p>
 
     <section>
@@ -43,6 +44,16 @@ git credential-manager github login --username $galleryUser</code></pre>
       <p>They remain supported. Run <code>git pull --ff-only</code> inside the existing AtlantisGallery checkout and restart that MCP. Its tools remain <code>prepare_gallery_upload</code> and <code>publish_gallery_asset</code>. New Atlantis users do not need a second MCP or Python environment.</p>
     </details>
 
+    <section id="operable-vehicles">
+      <h2>Operate vehicles directly on the Gallery work page</h2>
+      <p>Declare <code>operableVehicle</code> in every new submission. Set it to <code>true</code> for every vehicle that has operating logic, including bicycles. Visitors must be able to enter operating mode, control the vehicle and return to model inspection on its Gallery work page.</p>
+      <p>Use a supported native Gallery vehicle controller or set <code>vehicleEntry</code> to the relative path of a browser-ready HTML controller. Include its scripts, styles, models and other dependencies in <code>previewFiles</code>. Keep camera and keyboard controls usable inside the embedded view. A video, an external launch link or a downloadable engine project alone does not fulfill this requirement.</p>
+      <p>Before requesting approval, test the submitted build inside the Gallery work-page frame. Enter operating mode, use the controls supplied by the vehicle (for example pedal, steer and brake), confirm visible motion, and return to inspection. Record the actions and observed results in the review.</p>
+    </section>
+    <section>
+      <h2>Concurrent submissions</h2>
+      <p>Each work has its own <code>_data/works/&lt;asset-id&gt;.json</code> and <code>models/&lt;asset-id&gt;/</code> directory. Pages builds the combined index after merge. Leave <code>catalog.json</code> to existing records. Two different work IDs can merge in either order. For a conflicting older PR, move its new record into its own file and restore the main branch’s catalog before merging. Check authorship and content whenever the same ID is claimed twice.</p>
+    </section>
     <section id="english-interactions">
       <h2>Use English for model interactions before packaging</h2>
       <p>Before preparing an upload, convert all user-visible interaction text in the Gallery copy of the asset to English. This requirement applies to the model and its controls; your documentation and private conversation can remain in their original language.</p>
@@ -60,6 +71,7 @@ git credential-manager github login --username $galleryUser</code></pre>
       <pre><code>{
   "schema": "atlantis-gallery-submission/1",
   "slug": "hinged-cabinet",
+  "operableVehicle": false,
   "title": "Hinged Cabinet",
   "creator": "Your Display Name",
   "model": "cabinet.usd",

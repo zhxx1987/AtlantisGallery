@@ -41,7 +41,11 @@ async function setupSocial(item) {
     const response = await fetch(new URL('../social.json', import.meta.url));
     if (!response.ok) throw new Error('Could not load the Gallery social links.');
     const entries = await response.json();
-    const entry = entries[item.id];
+    let entry = entries[item.id];
+    if (!entry) {
+      const perWork = await fetch(new URL('../models/' + encodeURIComponent(item.id) + '/social.json', import.meta.url));
+      if (perWork.ok) entry = await perWork.json();
+    }
     if (!Number.isSafeInteger(entry?.discussion) || entry.discussion <= 0 ||
         typeof entry.gist !== 'string' || !/^[\da-f]{32}$/.test(entry.gist)) {
       hint.textContent = 'GitHub links are pending for this work.';
@@ -179,7 +183,13 @@ async function showWork() {
     message.hidden = false;
   });
 
-  if (item.id === 'ember-29') {
+  if (item.vehicleEntry) {
+    const repository = /^https:\/\/github\.com\/([\w-]+)\/(atlantis-[\w-]+)$/.exec(item.assetRepository || '');
+    const controller = new URL(item.vehicleEntry);
+    if (!repository || controller.origin !== `https://${repository[1].toLowerCase()}.github.io` ||
+        !controller.pathname.startsWith('/' + repository[2] + '/')) {
+      throw new Error('Vehicle entry must belong to the creator’s Gallery asset repository.');
+    }
     const inspect = params.get('view') === 'model';
     const actions = document.querySelector('.stage-actions');
     const link = document.createElement('a');
@@ -187,13 +197,13 @@ async function showWork() {
     if (!inspect) destination.searchParams.set('view', 'model');
     link.href = destination.href;
     link.className = 'file-button';
-    link.textContent = inspect ? 'Return to Trail Ride' : 'Inspect Model';
-    $('description').textContent = 'Ride a 29-inch hardtail with a ten-speed chain drive, freewheel and 100 mm suspension fork.';
+    link.textContent = inspect ? 'Operate Vehicle' : 'Inspect Model';
     if (!inspect) {
       const ride = document.createElement('iframe');
       ride.className = 'ride-frame';
-      ride.title = 'Ember 29 trail ride';
-      ride.src = 'https://zhxx1987.github.io/atlantis-ember-29/ride/';
+      ride.title = item.title + ' · operating controls';
+      ride.sandbox = 'allow-scripts allow-same-origin allow-pointer-lock';
+      ride.src = controller.href;
       $('stage').replaceChildren(ride);
       actions.replaceChildren(link);
       return;
