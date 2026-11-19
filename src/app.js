@@ -179,6 +179,28 @@ async function showWork() {
     message.hidden = false;
   });
 
+  if (item.id === 'ember-29') {
+    const inspect = params.get('view') === 'model';
+    const actions = document.querySelector('.stage-actions');
+    const link = document.createElement('a');
+    const destination = workUrl(item.id, readPage(params));
+    if (!inspect) destination.searchParams.set('view', 'model');
+    link.href = destination.href;
+    link.className = 'file-button';
+    link.textContent = inspect ? 'Return to Trail Ride' : 'Inspect Model';
+    $('description').textContent = 'Ride a 29-inch hardtail with a ten-speed chain drive, freewheel and 100 mm suspension fork.';
+    if (!inspect) {
+      const ride = document.createElement('iframe');
+      ride.className = 'ride-frame';
+      ride.title = 'Ember 29 trail ride';
+      ride.src = 'https://zhxx1987.github.io/atlantis-ember-29/ride/';
+      $('stage').replaceChildren(ride);
+      actions.replaceChildren(link);
+      return;
+    }
+    actions.prepend(link);
+  }
+
   try {
     const { GalleryViewer } = await import('./viewer.js');
     const viewer = new GalleryViewer($('stage'), controls);

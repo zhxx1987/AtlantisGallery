@@ -84,6 +84,7 @@ h1 { margin: 0; font-size: clamp(32px, 4vw, 56px); line-height: 1.14; letter-spa
 .stage-wrap, .details { border: 1px solid var(--line); background: var(--surface); min-width: 0; }
 .stage { position: relative; height: clamp(390px, 55vw, 610px); overflow: hidden; background: #d3dfd7; }
 .stage canvas { display: block; width: 100%; height: 100%; }
+.stage .ride-frame { display: block; width: 100%; height: 100%; border: 0; }
 .loading { position: absolute; z-index: 1; padding: 7px 10px; background: #fbfcf7ed; color: var(--green); font-size: 11px; pointer-events: none; }
 .motion-display { display: block; margin-bottom: 10px; min-height: 1.4em; font: 600 1.2rem ui-monospace, monospace; white-space: pre; }
 .loading { top: 50%; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; font-size: 13px; }
