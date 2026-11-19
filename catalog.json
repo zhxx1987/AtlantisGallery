@@ -1,5 +1,25 @@
 [
   {
+    "id": "t10-heavy-tank",
+    "title": "T-10 Heavy Tank",
+    "creator": "zhxx1987",
+    "description": "Early T-10 heavy tank with a pike nose, cast turret, seven road wheels per side and individually modeled track links. Orbit the vehicle, rotate the turret and open its hatches. Download the game and Isaac Sim scenes for third-person driving.",
+    "model": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/preview/T10.glb",
+    "thumbnail": "./models/t10-heavy-tank/preview.webp",
+    "downloads": [
+      {
+        "label": "Download Model and Motion Files",
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/model.zip"
+      },
+      {
+        "label": "Download Modeling Code",
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/modeling-code.zip"
+      }
+    ],
+    "interaction": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/interaction.json",
+    "assetRepository": "https://github.com/zhxx1987/atlantis-t10-heavy-tank"
+  },
+  {
     "id": "viktologist-iphone-duo",
     "title": "iPhone Duo",
     "creator": "Viktologist",
