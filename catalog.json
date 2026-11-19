@@ -10,7 +10,11 @@
     "downloads": [
       {
         "label": "Download Model and Motion Files",
-        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/drive-v2-785239285f22/model.zip"
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/isaac-drive-v3-32eea793ed9a/model.zip"
+      },
+      {
+        "label": "Download Isaac Sim Physics Code",
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/isaac-drive-v3-32eea793ed9a/real-physics-code.zip"
       },
       {
         "label": "Download Modeling Code",
