@@ -1,5 +1,23 @@
 [
   {
+    "id": "viktologist-iphone-duo",
+    "title": "iPhone Duo",
+    "creator": "Viktologist",
+    "description": "A dual-screen folding iPhone Duo concept with detailed cameras, layered displays, recessed USB and acoustic openings, fixed component assemblies, and a 0–180 degree hinge. Use the angle slider or Open, Half Fold and Close. The central display uses two rigid surfaces. The internal hinge and unobserved details are conceptual.",
+    "model": "https://viktologist.github.io/atlantis-iphone-duo/gallery-ec0cdfcf8cd8ed04ef8a9c0a20f505e8a4787a31cccbfc5e5f727df654ebd91e/preview/iphone_duo.glb",
+    "thumbnail": "./models/viktologist-iphone-duo/preview.webp",
+    "downloads": [
+      {
+        "label": "Download Model and Motion Files",
+        "url": "https://github.com/Viktologist/atlantis-iphone-duo/releases/download/gallery-ec0cdfcf8cd8ed04ef8a9c0a20f505e8a4787a31cccbfc5e5f727df654ebd91e/model.zip"
+      },
+      {
+        "label": "Download Modeling Code",
+        "url": "https://github.com/Viktologist/atlantis-iphone-duo/releases/download/gallery-ec0cdfcf8cd8ed04ef8a9c0a20f505e8a4787a31cccbfc5e5f727df654ebd91e/modeling-code.zip"
+      }
+    ],
+    "interaction": "https://viktologist.github.io/atlantis-iphone-duo/gallery-ec0cdfcf8cd8ed04ef8a9c0a20f505e8a4787a31cccbfc5e5f727df654ebd91e/interaction.json",
+    "assetRepository": "https://github.com/Viktologist/atlantis-iphone-duo"
     "id": "ember-29",
     "title": "Ember 29 · Mountain Bike and Trail Ride",
     "creator": "zhxx1987",
