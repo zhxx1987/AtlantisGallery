@@ -1,3 +1,4 @@
+import {NON_CASCADED_SHADOW_SIZE} from './shadow_resolution.js';
 import {PerspectiveCamera,Vector3,Matrix4} from '../../vendor/tidewater/src/engine/index.js';
 import {GPU} from '../../vendor/tidewater/src/engine/gpu/GPU.js';
 import {Texture} from '../../vendor/tidewater/src/engine/gpu/Texture.js';
@@ -28,7 +29,7 @@ function itemKey(item){
  const o=item.object,g=item.geometry,m=item.material;
  return JSON.stringify([o.id,...o.matrixWorld.elements,o.count,o.instanceMatrix?.version,g.id,g.index?.uuid,g.index?.version,...Object.values(g.attributes).flatMap(a=>[a.uuid,a.version]),m.id,m.version,m.visible,m.alphaTest,m.opacity,item.start,item.count]);
 }
-export function pointCameras(position,near,far,size=512){
+export function pointCameras(position,near,far,size=NON_CASCADED_SHADOW_SIZE){
                                                                     
  const fov=2*Math.atan(size/(size-4))*180/Math.PI;
  return POINT_FACES.map(([direction,up])=>{const c=new PerspectiveCamera(fov,1,near,far);c.reversedDepth=false;c.position.fromArray(position);c.up.fromArray(up);c.lookAt(new Vector3().fromArray(position.map((v,k)=>v+direction[k])));c.updateProjectionMatrix();c.updateMatrixWorld();return c;});
@@ -37,15 +38,20 @@ export function pointCameras(position,near,far,size=512){
                                                                                 
                                                                                  
 export class PointLightShadows {
- constructor(viewer,{size=512,memoryMB=256}={}){
+ constructor(viewer,{memoryMB}={}){
+  const size = NON_CASCADED_SHADOW_SIZE;
+  this.automaticBudget = memoryMB == null;
+  if (this.automaticBudget) memoryMB = 256;
   if(!Number.isInteger(size)||size<16||size>GPU.limits.maxTextureDimension2D)throw RangeError('Invalid point-shadow map size');
   if(!(memoryMB>0&&Number.isFinite(memoryMB)))throw RangeError('Invalid point-shadow memory budget');
   this.viewer=viewer;this.size=size;this.memoryMB=memoryMB;this.entries=[];this.capacity=0;this.sourceRevision=-1;this.stats={source_builds:0,list_builds:0,map_builds:0,face_passes:0,empty_faces:0,cache_hits:0,object_updates:0,static_face_passes:0,dynamic_face_passes:0,static_copies:0};
  }
  ensureAtlas(count){
   if(this.texture&&count<=this.capacity)return;
-  const capacity=Math.min(32,2**Math.ceil(Math.log2(Math.max(1,count)))),layers=capacity*6,bytes=layers*this.size*this.size*4;
-  if(layers>GPU.limits.maxTextureArrayLayers||bytes>this.memoryMB*1024**2)throw RangeError(`Point shadow atlas needs ${bytes} bytes / ${layers} layers; increase pointShadowMemoryMB or reduce pointShadowMapSize/light count`);
+  const capacity = count, layers = capacity * 6, bytes = layers * this.size * this.size * 4;
+  // Keep the original 64 MiB of visibility headroom for larger scenes.
+  if (this.automaticBudget) this.memoryMB = Math.max(256, bytes / 1024**2 + 64);
+  if(layers>GPU.limits.maxTextureArrayLayers||bytes>this.memoryMB*1024**2)throw RangeError(`Point shadow atlas needs ${bytes} bytes / ${layers} layers; increase pointShadowMemoryMB or reduce the number of shadow-casting lights`);
   const old=this.texture,neutral=this.neutral,base=this.staticTexture;this.staticTexture=null;
   this.texture=new Texture({label:'cached point shadow array',width:this.size,height:this.size,depth:layers,dimension:'2d-array',format:'depth32float',usage:['sample','render','copySrc','copyDst']});
   this.neutral=new Texture({label:'point shadow caster neutral depth',width:1,height:1,depth:1,dimension:'2d-array',format:'depth32float',usage:['sample','render']});
@@ -125,19 +131,25 @@ export class PointLightShadows {
                                                            
   const active=lights.map((l,i)=>({l,i})).filter(({l})=>l.type!=='spot'&&!l.isSpotLight&&l.castShadow!==false);
   if(!active.length){this.clear();return;}
-  this.ensureAtlas(Math.max(...active.map(({i})=>i))+1);
+  this.ensureAtlas(active.length);
   const revision=v.shadowRevision??0,terrainState=terrainShadowState(v);this.sources(revision);
   const enabled=new Set(active.map(({i})=>i));for(let i=0;i<this.entries.length;i++)if(this.entries[i]&&!enabled.has(i)){this.releaseEntry(this.entries[i]);this.entries[i]=null;}
   const entries=active.map(({l,i})=>{const lightKey=JSON.stringify([l.position,l.distance??l.range??0,l.shadow?.near,l.shadow?.bias,l.shadow?.normalBias]);let e=this.entries[i];if(!e||e.lightKey!==lightKey||e.sourceRevision!==revision||e.terrainState!==terrainState){e=this.prepare(l,i,revision,terrainState);e.lightKey=lightKey;}else if(!e.dirty)this.stats.cache_hits++;return e;}),shadow=local.shadow;
   this.ensureStaticCache();
   const info=shadow.params.fields.info.value;for(let i=0;i<32;i++)info[i]=[-1,0,0,0];
   const sync=r.syncPipelines;r.syncPipelines=true;shadow.writing=true;setShadowMap(v.shadows.neutral);
-  try{for(const e of entries){
+  try{for(const [slot, e] of entries.entries()){
+   if (e.atlasSlot !== slot) {
+    e.atlasSlot = slot;
+    e.dirty = true;
+    for (const face of e.faces) { face.dirty = true; face.staticDirty = true; }
+   }
+   const firstLayer = slot * 6;
    shadow.params.fields.softness.value[e.index]=[lights[e.index].shadow?.sourceRadius??.06,e.near,e.far,0];
-   for(let f=0;f<6;f++)shadow.params.fields.matrices.value[e.index*6+f]=e.faces[f].matrix;
+   for(let f=0;f<6;f++)shadow.params.fields.matrices.value[firstLayer+f]=e.faces[f].matrix;
    if(e.dirty){for(let f=0;f<6;f++){
     const face=e.faces[f];if(!face.dirty)continue;
-    const layer=e.index*6+f,pass={label:`point-shadow-${e.index}-${f}`,kind:'depth',camera:face.camera,frameBlock:face.block,apsPointShadow:true,pointShadowNeutral:this.neutral,cull:false,depthView:(this.staticTexture??this.texture).view({dimension:'2d',baseArrayLayer:layer,arrayLayerCount:1}),depthFormat:'depth32float',clearDepth:1,depthCompare:'less-equal',depthBias:2,depthBiasSlopeScale:1};
+    const layer=firstLayer+f,pass={label:`point-shadow-${e.index}-${f}`,kind:'depth',camera:face.camera,frameBlock:face.block,apsPointShadow:true,pointShadowNeutral:this.neutral,cull:false,depthView:(this.staticTexture??this.texture).view({dimension:'2d',baseArrayLayer:layer,arrayLayerCount:1}),depthFormat:'depth32float',clearDepth:1,depthCompare:'less-equal',depthBias:2,depthBiasSlopeScale:1};
     setFrameCamera(face.camera,this.size,this.size,{block:face.block});
     if(!this.staticTexture||face.staticDirty){
     const items=this.staticTexture?this.items(face.records.filter(row=>!row.dynamic)):{opaque:[...face.items.opaque],transparent:[...face.items.transparent]};
@@ -157,7 +169,7 @@ export class PointLightShadows {
                                                                                 
    if(!r.precompiling){e.dirty=false;e.builds++;this.stats.map_builds++;}
    }
-   if(!e.dirty)info[e.index]=[e.index*6,1,e.bias,e.normalBias];
+   if(!e.dirty)info[e.index]=[firstLayer,1,e.bias,e.normalBias];
   }}finally{shadow.writing=false;r.syncPipelines=sync;setShadowMap(v.shadows.texture);}
  }
  releaseEntry(e){if(!e)return;for(const f of e.faces){const release=()=>{f.block.buffer?.destroy();for(const terrain of f.terrains)terrain.geometry.dispose();};if(GPU.encoder)GPU.onSubmit(null,release);else release();}const r=this.viewer.meshRenderer;for(let f=0;f<6;f++){const key=`point-shadow-${e.index}-${f}`;for(const s of r.vegetationSystems){s.releaseView?.(key);}r.vegetationViews?.delete(key);}}

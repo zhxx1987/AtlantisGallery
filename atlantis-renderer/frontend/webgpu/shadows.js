@@ -1,3 +1,4 @@
+import {NON_CASCADED_SHADOW_SIZE} from './shadow_resolution.js';
 import {SunShadows} from '../../vendor/tidewater/src/engine/render/Shadows.js';
 import {Vector4} from '../../vendor/tidewater/src/engine/math/index.js';
 import {fitShadowClipmaps,clipmapShadowCode} from './shadow_clipmap.js';
@@ -20,7 +21,8 @@ export class WebGPUSunShadows extends SunShadows {
   constructor(options={}){
     const guard=options.cacheGuardFraction??.25;
     if(!Number.isFinite(guard)||guard<0||guard>.5)throw RangeError('Shadow cache guard must be in [0, .5]');
-    super(options);this.vegetationBudget=vegetationShadowBudget(options.vegetationBudget);this.cacheGuardFraction=guard;this.neutral=new Texture({label:'caster neutral receiver depth',width:1,height:1,depth:4,dimension:'2d-array',format:'depth32float',usage:['sample','render']});
+    super(options.splits?.length === 1 ? {...options, size: NON_CASCADED_SHADOW_SIZE} : options);
+    this.vegetationBudget=vegetationShadowBudget(options.vegetationBudget);this.cacheGuardFraction=guard;this.neutral=new Texture({label:'caster neutral receiver depth',width:1,height:1,depth:4,dimension:'2d-array',format:'depth32float',usage:['sample','render']});
                                                                              
                                                                         
     this.texture.usageList.push('copySrc','copyDst');

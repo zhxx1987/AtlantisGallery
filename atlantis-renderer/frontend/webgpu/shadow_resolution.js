@@ -1,0 +1,1 @@
+export const NON_CASCADED_SHADOW_SIZE = 2048;

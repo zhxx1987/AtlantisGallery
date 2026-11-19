@@ -1,3 +1,4 @@
+import {NON_CASCADED_SHADOW_SIZE} from './shadow_resolution.js';
 import {GPU} from '../../vendor/tidewater/src/engine/gpu/GPU.js';
 import {Vector3} from '../../vendor/tidewater/src/engine/math/index.js';
 import {G} from '../../vendor/tidewater/src/engine/render/Frame.js';
@@ -18,6 +19,7 @@ export class OutdoorLighting {
     this.environmentFrame=new EnvironmentFrame();this.weather=normalizeWeather(viewer.options?.weather||{},DEFAULT_WEATHER);
                                                                             
     const overrides={};for(const k of Object.keys(DEFAULT_WEATHER))if(k in (viewer.options||{}))overrides[k]=viewer.options[k];
+    if (viewer.shadows?.count === 1) overrides.shadowMapSize = NON_CASCADED_SHADOW_SIZE;
     this.weather=normalizeWeather(overrides,this.weather);this.previousHooks=captureHooks();this.installedHooks={};this.revision=0;
     this.directEnabled=this.weather.directEnabled;this.environmentMode='procedural';this.environmentRequest=0;this.localLightData=viewer.options?.localLights||[];
   }
@@ -59,6 +61,7 @@ export class OutdoorLighting {
   initialize(){return this.init();}
   setWeather(options={}) {
     if(this.disposed)throw new Error('OutdoorLighting is disposed');
+    if (this.shadows?.count === 1) options = {...options, shadowMapSize: NON_CASCADED_SHADOW_SIZE};
     const next=normalizeWeather(options,this.weather);
     if(JSON.stringify(next)===JSON.stringify(this.weather))return this;
     const previous=this.weather;

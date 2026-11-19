@@ -1,10 +1,10 @@
 import {Scene,PerspectiveCamera,Vector3,Matrix4,Box3,Color,Mesh,Float32BufferAttribute,BufferGeometry,Uint32BufferAttribute} from '../../vendor/tidewater/src/engine/index.js';
 import {SRGBColorSpace} from '../../vendor/tidewater/src/engine/constants.js';
 import {GPU,FrameUniforms,G,setFrameCamera,SceneRenderer,LAYERS,Material,Texture,readTexture} from '../../vendor/tidewater/src/engine/webgpu.js';
-import {WebGPUSunShadows as SunShadows,terrainCasterBounds} from './shadows.js?interaction-repair=1';
+import {WebGPUSunShadows as SunShadows,terrainCasterBounds} from './shadows.js?release=2k-shadows';
 import {PixelNavigation} from './navigation.js';
 import {InteractiveFrameLoop} from './interactive_frame_loop.js';
-import {OutdoorLighting} from './lighting.js?interaction-repair=1';
+import {OutdoorLighting} from './lighting.js?release=2k-shadows';
 import {PhysicalCamera} from './post.js';
 import {loadHeightfield} from './heightfield.js';
 import {Ocean} from './ocean.js';
@@ -27,7 +27,7 @@ import {shadowCasterPolicy} from './shadow_policy.js';
 import {installShadowUnified,uninstallShadowUnified} from './shadow_caster_unified.js';
 import {ReceiverShadowIntegration} from './receiver_shadow_integration.js';
 import {ShadowGlobalHiZ} from './shadow_global_hiz.js?solar-repair=3';
-import {PointLightShadows} from './point_light_shadows.js?interaction-repair=1';
+import {PointLightShadows} from './point_light_shadows.js?release=2k-shadows';
 import {PlanarMirrors} from './planar_mirrors.js?interaction-repair=1';
 import {normalizeRenderScale,renderResolution} from './render_resolution.js';
 import {createAssetRegistry,registerAsset,assetRecord,assetState,assetStates,setAssetVisible,showOnlyAsset,visibleAssetIds as visibleAssetRegistryIds} from './asset_visibility.js';
@@ -95,7 +95,7 @@ export class Viewer {
       try{this.shadowUnified=installShadowUnified(this);}
       catch(error){this.shadowCasterBatchingError={stage:'install',message:String(error?.message??error)};console.error('Shadow caster batching install failed; native solar shadows keep the original collect path',error);}
     }
-    this.lighting=new OutdoorLighting(this);await this.lighting.init();if(this.disposed){this.lighting.dispose();return this;}this.pointShadows=new PointLightShadows(this,{size:this.options.pointShadowMapSize??512,memoryMB:this.options.pointShadowMemoryMB??256});this.planarMirrors=new PlanarMirrors(this,{resolutionScale:this.options.mirrorResolutionScale??.5,maxSize:this.options.mirrorMaxSize??1024});this.renderPipeline=new PhysicalCamera(this,this.lighting);await this.renderPipeline.init?.();if(this.disposed){this.renderPipeline.dispose();return this;}await this.navigation.picker.init();if(this.disposed)return this;this.camera.fov=this.presentation?36:42;this.camera.updateProjectionMatrix();this.syncLens();this.createGrid();
+    this.lighting=new OutdoorLighting(this);await this.lighting.init();if(this.disposed){this.lighting.dispose();return this;}this.pointShadows=new PointLightShadows(this,{memoryMB:this.options.pointShadowMemoryMB});this.planarMirrors=new PlanarMirrors(this,{resolutionScale:this.options.mirrorResolutionScale??.5,maxSize:this.options.mirrorMaxSize??1024});this.renderPipeline=new PhysicalCamera(this,this.lighting);await this.renderPipeline.init?.();if(this.disposed){this.renderPipeline.dispose();return this;}await this.navigation.picker.init();if(this.disposed)return this;this.camera.fov=this.presentation?36:42;this.camera.updateProjectionMatrix();this.syncLens();this.createGrid();
     this.basePixelRatio=Math.min(globalThis.devicePixelRatio||1,2);this.pixelRatio=this.basePixelRatio;this.resize();this.resizeFrame=null;this.observer=new ResizeObserver(()=>{if(this.resizeFrame!==null)return;this.resizeFrame=requestAnimationFrame(()=>{this.resizeFrame=null;if(!this.disposed)this.resize();});});this.observer.observe(this.container);await GPU.pipelinesReady();if(this.disposed){this.observer.disconnect();return this;}GPU.submit();this.lastTime=performance.now();this.start();return this;
   }
   setRenderScale(value){this.renderScale=normalizeRenderScale(value);this.resize();return this.renderScale;}
