@@ -54,6 +54,24 @@ h1 { margin: 0; font-size: clamp(32px, 4vw, 56px); line-height: 1.14; letter-spa
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; padding: 0; margin: 0; list-style: none; }
 .card { display: block; height: 100%; border: 1px solid var(--line); background: var(--surface); transition: border-color .15s, box-shadow .15s; }
 .card:hover { border-color: #869a7c; box-shadow: 0 5px 18px #223a2912; }
+.cards > li { display: flex; flex-direction: column; min-width: 0; }
+.cards .card { height: auto; flex: 1; }
+.engine-order-button { border: 1px solid var(--line); background: #f0f5e8; color: var(--green); padding: 10px 12px; text-align: left; font-size: 13px; font-weight: 600; }
+.engine-order-button:hover { background: #e6efda; }
+.cards .engine-order-button { border-top: 0; }
+#game-engine-assembly button { width: 100%; }
+.engine-dialog { width: min(30rem, calc(100% - 2rem)); max-height: 90dvh; padding: 22px; border: 1px solid var(--line); color: var(--green); background: var(--surface); }
+.engine-dialog::backdrop { background: #13271e80; }
+.engine-dialog header, .engine-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.engine-dialog header { justify-content: space-between; flex-wrap: nowrap; }
+.engine-dialog h2 { margin: 0; font-size: 20px; }
+.engine-asset { margin: 8px 0 20px; color: var(--muted); overflow-wrap: anywhere; }
+.engine-dialog label { display: block; font-size: 14px; font-weight: 600; }
+.engine-dialog select, .engine-dialog textarea { width: 100%; margin: 6px 0 15px; padding: 9px; border: 1px solid var(--line); background: white; color: var(--green); font: inherit; }
+.engine-dialog textarea { height: 10rem; resize: vertical; font: 12px/1.5 ui-monospace, monospace; }
+.engine-secondary { padding: 8px 10px; border: 1px solid var(--line); background: white; color: var(--green); font: inherit; font-size: 13px; }
+.engine-status { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+.engine-status:empty { margin: 0; }
 .card-preview { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; overflow: hidden; background: #dce5dc; color: #546c5b; font-size: 13px; }
 .card-preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .card-body { padding: 17px 18px; }
@@ -69,6 +87,7 @@ h1 { margin: 0; font-size: clamp(32px, 4vw, 56px); line-height: 1.14; letter-spa
 .back-link { display: inline-block; padding: 8px 0; color: var(--muted); font-size: 14px; }
 .back-link:hover { text-decoration: underline; }
 .work-heading { margin: 19px 0 24px; }
+.work-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .work-heading h1 { font-size: clamp(28px, 4vw, 44px); overflow-wrap: anywhere; }
 .work-heading strong { color: #182a27; }
 .primary, .stage-actions button, .file-button { border: 1px solid var(--line); background: white; color: var(--green); padding: 9px 12px; font-size: 13px; white-space: nowrap; }

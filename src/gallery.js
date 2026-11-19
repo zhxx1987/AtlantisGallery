@@ -1,4 +1,5 @@
 import { galleryUrl, loadCatalog, readPage, workUrl } from './catalog.js';
+import { engineOrderButton } from './engine-order.js';
 
 const PAGE_SIZE = 12;
 const catalogList = document.querySelector('#catalog');
@@ -36,7 +37,7 @@ function createCard(item, page) {
   creator.textContent = item.creator || 'Anonymous Creator';
   body.append(title, creator);
   link.append(preview, body);
-  entry.append(link);
+  entry.append(link, engineOrderButton(item));
   return entry;
 }
 

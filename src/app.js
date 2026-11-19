@@ -1,4 +1,5 @@
 import { galleryUrl, loadCatalog, readPage, workUrl } from './catalog.js';
+import { engineOrderButton } from './engine-order.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -31,6 +32,7 @@ function showDetails(item) {
   }
   if (!downloads.children.length) downloads.textContent = 'No downloads are available for this work.';
   $('isaac-assembly').hidden = !item.id;
+  $('game-engine-assembly').replaceChildren(...(item.id ? [engineOrderButton(item)] : []));
   $('work-social').hidden = !item.id;
 }
 
