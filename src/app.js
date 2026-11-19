@@ -20,16 +20,6 @@ function showDetails(item) {
   $('about-work').hidden = !item.description;
   document.title = `${item.title} · Atlantis Gallery`;
 
-  $('drive-work')?.remove();
-  if (item.id === 't10-heavy-tank' && item.creator === 'zhxx1987') {
-    const drive = document.createElement('a');
-    drive.id = 'drive-work';
-    drive.className = 'file-button';
-    drive.href = '/atlantis-t10-heavy-tank/drive/';
-    drive.textContent = 'Drive T-10';
-    document.querySelector('.stage-actions').prepend(drive);
-  }
-
   const downloads = $('downloads');
   downloads.replaceChildren();
   for (const file of item.downloads || []) {

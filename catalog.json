@@ -3,7 +3,8 @@
     "id": "t10-heavy-tank",
     "title": "T-10 Heavy Tank",
     "creator": "zhxx1987",
-    "description": "Early T-10 heavy tank with a pike nose, cast turret, seven road wheels per side and individually modeled track links. Orbit the vehicle, rotate the turret and open its hatches. Download the game and Isaac Sim scenes for third-person driving.",
+    "description": "Drive the T-10 in third person in the viewer below. Select Inspect Model to explore its cast turret, hatches and seven road wheels per side. The download includes the Isaac Sim physics scene.",
+    "vehicleEntry": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/drive/",
     "model": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/preview/T10.glb",
     "thumbnail": "./models/t10-heavy-tank/preview.webp",
     "downloads": [
