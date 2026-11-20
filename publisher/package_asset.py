@@ -32,6 +32,11 @@ stop-before-reverse, ground-contact traction, bounded per-wheel spring/damper su
 terrain pitch/roll, mild brake dive with damped settling, airborne and landing response.
 Bind actual wheels, arms and tracks to their pivots and travelled distance. Use a fixed
 timestep and safe input release on lost focus. Exercise controls and observed transforms.
+Third-person operation hides the cursor with pointer capture and a cursor:none fallback.
+Exit on Esc, blur, hidden tab or capture loss; restore the cursor and release all inputs.
+Gallery inspection and operation share the exact same Viewer, canvas, renderer, lighting,
+shadows and post-processing instances. Only add the driving scene and logic module.
+Keep the shared 2048-square shadow footprint near the vehicle and follow its travel.
 Native real physics must use its own solver without duplicate procedural integration.
 '''
 
@@ -114,15 +119,38 @@ def stage_package(manifest, output):
     operable = data.get('operableVehicle')
     if type(operable) is not bool:
         raise ValueError('Declare operableVehicle as true for a vehicle with operating logic, or false otherwise.')
-    entry = data.get('vehicleEntry')
-    if entry is not None:
-        if not operable:
-            raise ValueError('vehicleEntry requires operableVehicle=true.')
-        preview[entry] = relative_file(root, entry, {'.html'})
-        metadata['vehicleEntry'] = 'preview/' + quote(entry)
-    dependencies = DEPENDENCY_TYPES | {'.js', '.mjs', '.css', '.wasm', '.html', '.ogg', '.mp3', '.wav'} if entry else DEPENDENCY_TYPES
+    if data.get('vehicleEntry') is not None:
+        raise ValueError('HTML vehicleEntry is no longer supported. Supply a vehicleController module that uses the Gallery host renderer.')
+    controller = data.get('vehicleController')
+    if controller is not None:
+        if not operable or not isinstance(controller, dict) or controller.get('schema') != 'atlantis-gallery-vehicle/1':
+            raise ValueError('vehicleController requires operableVehicle=true and schema atlantis-gallery-vehicle/1.')
+        if controller.get('renderer') != 'gallery-shared' or controller.get('thirdPersonCursor') != 'hidden':
+            raise ValueError('Vehicle controllers must declare renderer=gallery-shared and thirdPersonCursor=hidden.')
+        base = controller.get('base', './')
+        if not isinstance(base, str) or '\\' in base or ':' in base or base.startswith('/'):
+            raise ValueError('vehicleController.base must be a relative directory.')
+        base = posixpath.normpath(posixpath.join(posixpath.dirname(model), base))
+        if base == '..' or base.startswith('../'):
+            raise ValueError('vehicleController.base escapes the submission.')
+        descriptor = dict(controller)
+        descriptor['base'] = 'preview/' + (quote(base) + '/' if base != '.' else '')
+        metadata['vehicleController'] = descriptor
+    dependencies = DEPENDENCY_TYPES | {'.js', '.mjs', '.css', '.wasm', '.html', '.ogg', '.mp3', '.wav'} if controller else DEPENDENCY_TYPES
     for name in files_field(data, 'previewFiles'):
         preview[name] = relative_file(root, name, dependencies)
+    if controller:
+        references = list(controller.get('assets', {}).values())
+        if controller.get('module'):
+            references.append(controller['module'])
+        elif controller.get('profile') not in ('t10', 'ember-29'):
+            raise ValueError('Supply a vehicleController.module exporting install(context), or a supported vehicle profile.')
+        for reference in references:
+            if not isinstance(reference, str) or '\\' in reference or ':' in reference or reference.startswith('/'):
+                raise ValueError('Vehicle controller dependencies must be relative preview files.')
+            name = posixpath.normpath(posixpath.join(base, reference))
+            if name not in preview:
+                raise ValueError('List the vehicle controller module and assets in previewFiles: ' + name)
     model_archive = {
         name: path for name, path in preview.items()
         if PurePosixPath(name).suffix.lower() not in CONTROL_TYPES
@@ -178,8 +206,8 @@ def stage_package(manifest, output):
         model_archive.pop(data['interaction'], None)
     if native_vehicle and not operable:
         raise ValueError('Declare operableVehicle=true for this vehicle controller.')
-    if operable and not (entry or native_vehicle):
-        raise ValueError('An operable vehicle requires a packaged HTML vehicleEntry or a supported native vehicle controller.')
+    if operable and not (controller or native_vehicle):
+        raise ValueError('An operable vehicle requires a shared-renderer vehicleController or supported native Gallery controller.')
     work_order = None
     if data.get('workOrder'):
         work_order = relative_file(root, data['workOrder'], {'.json'})
@@ -296,7 +324,10 @@ def catalog_entry(asset_id, plan, hosting):
     base = hosting['preview_base_url'].rstrip('/') + '/'
     entry = {'id': asset_id, **plan['metadata']}
     del entry['slug']
-    for field in ('model', 'interaction', 'vehicleEntry'):
+    if 'vehicleController' in entry:
+        entry['vehicleController'] = dict(entry['vehicleController'])
+        entry['vehicleController']['base'] = base + entry['vehicleController']['base']
+    for field in ('model', 'interaction'):
         if field in entry:
             entry[field] = base + entry[field]
     entry['thumbnail'] = f'./models/{asset_id}/' + entry['thumbnail']

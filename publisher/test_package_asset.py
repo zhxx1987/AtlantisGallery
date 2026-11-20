@@ -9,15 +9,15 @@ def run_check():
     with tempfile.TemporaryDirectory() as folder:
         root=Path(folder)
         files={'tank.glb':b'glb fixture','tank.usda':b'#usda 1.0', 'thumb.webp':b'fixture',
-            'drive.html':b'<html>Drive</html>', 'motion.py':b'def step(dt): return dt\n',
+            'controller.js':b'export async function install(context) { return {}; }', 'motion.py':b'def step(dt): return dt\n',
             'native.py':b'# native entry\n','build.py':b'# editable geometry\n',
             'config.json':b'{}','texture.png':b'texture','secret.txt':b'NOT PUBLIC',
             'order.json':b'{"approved":true}',
             'isaac-runtimes.json':json.dumps({'modes':{'real-physics':{'entry':'native.py','usd':'tank.usda'}}}).encode()}
         for name,content in files.items():(root/name).write_bytes(content)
         data={'schema':'atlantis-gallery-submission/1','slug':'test-tank','title':'Test Tank','creator':'Test',
-            'model':'tank.glb','thumbnail':'thumb.webp','operableVehicle':True,'vehicleEntry':'drive.html',
-            'previewFiles':['motion.py','texture.png'], 'modelFiles':['tank.usda'],
+            'model':'tank.glb','thumbnail':'thumb.webp','operableVehicle':True,'vehicleController':{'schema':'atlantis-gallery-vehicle/1','module':'controller.js','renderer':'gallery-shared','thirdPersonCursor':'hidden'},
+            'previewFiles':['motion.py','texture.png','controller.js'], 'modelFiles':['tank.usda'],
             'motionFiles':['native.py'], 'controlFiles':['config.json','isaac-runtimes.json'],
             'sourceFiles':['build.py'],'workOrder':'order.json','isaacRuntimes':['real-physics']}
         manifest=root/'submission.json'
@@ -33,7 +33,7 @@ def run_check():
                 assert archive.testzip() is None;contents[name]=set(archive.namelist())
                 assert not {'secret.txt','submission.json'} & contents[name]
         assert contents['model.zip']=={'tank.glb','tank.usda','texture.png'}
-        assert contents['controls.zip']=={'motion.py','native.py','drive.html','config.json','isaac-runtimes.json','ASSEMBLE_ISAAC.md','ASSEMBLE_GAME_ENGINE.md'}
+        assert contents['controls.zip']=={'motion.py','native.py','controller.js','config.json','isaac-runtimes.json','ASSEMBLE_ISAAC.md','ASSEMBLE_GAME_ENGINE.md'}
         assert contents['modeling-code.zip']=={'build.py','order.json'}
         assert len([f for f in plan['files'] if f['destination']=='creator-releases'])==3
         assert not (root/'one/order.json').exists()
@@ -53,6 +53,18 @@ def run_check():
         try:check_catalog_slot(checkout,'test',{**entry,'creator':'Someone Else'})
         except ValueError:pass
         else:raise AssertionError('creator replacement accepted')
+        assert entry['vehicleController']['base']=='https://example.com/preview/preview/'
+        for field,value in [('renderer','independent'),('thirdPersonCursor','visible')]:
+            before=data['vehicleController'][field];data['vehicleController'][field]=value
+            try:prepare('bad-'+field)
+            except ValueError:pass
+            else:raise AssertionError('invalid rendering policy accepted')
+            data['vehicleController'][field]=before
+        data['vehicleEntry']='drive.html'
+        try:prepare('bad-iframe')
+        except ValueError:pass
+        else:raise AssertionError('independent HTML vehicle entry accepted')
+        data.pop('vehicleEntry')
         data['isaacRuntimes']=['game']
         try:prepare('bad-runtime')
         except ValueError:pass
@@ -62,7 +74,7 @@ def run_check():
         except ValueError:pass
         else:raise AssertionError('path escape accepted')
         data.update(operableVehicle=False,previewFiles=['texture.png'],motionFiles=[],controlFiles=[])
-        data.pop('vehicleEntry');data.pop('workOrder')
+        data.pop('vehicleController');data.pop('workOrder')
         static=prepare('static')
         assert len(static['metadata']['downloads'])==3 and not static['metadata']['operableVehicle']
         assert static['control_archive_contents']==['ASSEMBLE_GAME_ENGINE.md','ASSEMBLE_ISAAC.md']

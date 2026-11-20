@@ -7,6 +7,7 @@ import { MotionRuntime } from './motion.js';
 import { installGalleryEffects } from './view-effects.js';
 import { prepareModelNormals } from './split-normals.js';
 import { installPythonVehicle } from './vehicle.js';
+import { installVehicle } from './vehicle-host.js';
 import { instanceAwareBounds } from '../atlantis-renderer/frontend/webgpu/scene_bounds.js';
 
 export class GalleryViewer {
@@ -26,16 +27,17 @@ export class GalleryViewer {
       shadowMapSize: 2048,
       shadowCasterBatching: false,
       readGalleryMesh: async (url, signal) => {
-        if (url !== this.importUrl || signal?.aborted) throw Error('Model import was canceled');
-        return { buffer: this.importBuffer, metadata: { adapter: 'gallery-three-usd' } };
+        if (signal?.aborted || (url !== this.importUrl && !this.assetBuffers?.has(url))) throw Error('Model import was canceled');
+        return { buffer: this.assetBuffers?.get(url) ?? this.importBuffer, metadata: { adapter: 'gallery-three-usd' } };
       },
     });
     await this.native.ready;
     this.effects = await installGalleryEffects(this.native);
     this.native.beforeRender = dt => {
       this.mixer?.update(dt);
-      this.motion?.update(dt);
+      if (!this.vehicle?.enabled) this.motion?.update(dt);
       this.syncPose();
+      this.updateShadowFocus();
     };
 
     const canvas = this.native.canvas;
@@ -81,7 +83,7 @@ export class GalleryViewer {
       motion = new MotionRuntime(root, panel, spec);
       const nodes = [];
       root.traverse(node => {
-        node.userData = { galleryNode: nodes.length };
+        node.userData = { galleryNode: nodes.length, ...(spec.vehicle ? {aps_no_instancing:true,aps_no_batch:true} : {}) };
         nodes.push(node);
         for (const material of (Array.isArray(node.material) ? node.material : [node.material])) {
           if (!material) continue;
@@ -149,6 +151,7 @@ export class GalleryViewer {
       this.effects.setScale(span);
       this.frame();
       this.syncPose();
+      if(spec.vehicle)this.vehicle=await installVehicle(this,spec.vehicle,new URL(url,location.href).href);
       return { meshes: this.originals.length, errors: motion.errors };
     } catch (error) {
       motion?.dispose();
@@ -177,19 +180,36 @@ export class GalleryViewer {
       this.span=Math.max(size.x,size.y,size.z);
       this.originals=[];
       this.vehicleScale=1.35;
+      let courseRoot;
       if(spec.logic.course){
         this.importUrl=new URL(spec.logic.course,new URL(url,location.href)).href;
         const course=await fetch(this.importUrl);
         if(!course.ok)throw Error('Vehicle course HTTP '+course.status);
         this.importBuffer=await course.arrayBuffer();
-        await this.native.addAsset(this.importUrl);
+        courseRoot=(await this.native.addAsset(this.importUrl)).root;
+        courseRoot.visible=false;this.native.invalidateVisibility();
       }
       this.effects.setScale(this.span);this.frame();
-      this.vehicle=await installPythonVehicle(this.native,spec.logic,new URL(url,location.href).href,this.panel);
+      this.vehicle=await installPythonVehicle(this.native,spec.logic,new URL(url,location.href).href,this.panel,on=>{if(courseRoot){courseRoot.visible=on;this.native.invalidateVisibility();}});
       return {meshes:0,errors:[]};
     } finally {
       this.importUrl=null;this.importBuffer=null;
     }
+  }
+
+  async addVehicleAsset(url,buffer){
+    this.assetBuffers??=new Map();this.assetBuffers.set(url,buffer);
+    try{return await this.native.addAsset(url);}finally{this.assetBuffers.delete(url);}
+  }
+
+  setVehicleFloor(visible){
+    this.native.meshAsset.root.traverse(n=>{if(n.userData?.galleryFloor)n.visible=visible;});
+  }
+
+  updateShadowFocus(){
+    if(!this.bounds)return;
+    const center=this.vehicle?.getFocus?.()??this.bounds.getCenter(new THREE.Vector3()).toArray();
+    this.native.shadowFocus={center,radius:Math.max(2,this.span*.8)};
   }
 
   syncPose() {
@@ -205,13 +225,14 @@ export class GalleryViewer {
       }
     }
     if (changed) {
+      this.native.invalidateObjectTransforms([this.native.meshAsset.root]);
       this.native.shadows.cascades[0].dirty = true;
       this.native.depthSnapshot = null;
     }
   }
 
   pick(x, y) {
-    if (!this.motion?.targets.size) return;
+    if (this.vehicle?.enabled || !this.motion?.targets.size) return;
     const rect = this.native.canvas.getBoundingClientRect();
     const source = this.native.camera, camera = this.pickCamera;
     camera.position.fromArray(source.position.toArray());

@@ -4,7 +4,6 @@
     "title": "T-10 Heavy Tank",
     "creator": "zhxx1987",
     "description": "Drive the T-10 on this Gallery page. Simplified driving includes braking/hold, coasting, stop-before-reverse, articulated suspension and ground contact, mild brake dive with damped settling, and airborne/landing behavior. Three downloads: model assets, combined game + native real-physics controls, and editable modeling source. Extract model and controls together to drive.",
-    "vehicleEntry": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/drive/",
     "model": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/preview/T10.glb",
     "thumbnail": "./models/t10-heavy-tank/preview.webp",
     "downloads": [
@@ -30,7 +29,18 @@
     "operableVehicle": true,
     "isaacRuntimes": [
       "real-physics"
-    ]
+    ],
+    "vehicleController": {
+      "schema": "atlantis-gallery-vehicle/1",
+      "profile": "t10",
+      "base": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/drive/",
+      "assets": {
+        "course": "Course.glb",
+        "flash": "Flash.glb"
+      },
+      "renderer": "gallery-shared",
+      "thirdPersonCursor": "hidden"
+    }
   },
   {
     "id": "viktologist-iphone-duo",

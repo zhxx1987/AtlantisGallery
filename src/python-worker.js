@@ -9,6 +9,11 @@ async function start(profile, descriptor) {
     const source=await response.text();
     importScripts(PYODIDE_URL+'pyodide.js');
     python=await loadPyodide({indexURL:PYODIDE_URL});
+    for(const [name,url] of Object.entries(descriptor.dependencies??{})){
+      if(!/^[a-zA-Z_][a-zA-Z_0-9]*\.py$/.test(name))throw Error('Invalid Python dependency name');
+      const r=await fetch(url,{credentials:'omit'});if(!r.ok)throw Error('Python dependency HTTP '+r.status);
+      python.FS.writeFile('/'+name,await r.text());
+    }
     python.FS.writeFile('/asset_motion.py',source);
     python.globals.set('asset_config_json',JSON.stringify(descriptor.config??{}));
     python.runPython(`import json,sys

@@ -39,13 +39,13 @@ export class Viewer {
   constructor(container,onSelect=()=>{},options={}){
     this.container=container;this.options=options;this.onSelect=onSelect;this.disposed=false;this.loadId=0;this.oceanLoadId=0;this.cameraRevision=0;this.sceneTransaction=Promise.resolve();this.sceneEpoch=0;this.errors=[];this.frameTimings=[];this.time=0;this.frame=0;this.paused=false;this.loading=0;this.components=new Set();this.retainedAssets=new Set();this.pipelineHandles=[];
     this.vegetationLOD='auto';this.grassDensityRetention=validateGrassRetention(options.grassDensityRetention??DEFAULT_GRASS_RETENTION);this.meshCompanions=new Set();this.inlandOptics=null;
-                                                                                
-                                                                      
+
+
     this.assetRoots=createAssetRegistry();
-                                                                          
+
     this.poseModels=createPoseRegistry();
-                                                                           
-                                                                              
+
+
     this.shadowCacheRevision=0;this.shadowCacheHold=false;this.interventionToggle=null;
     this.renderScale=normalizeRenderScale(options.renderScale??1);
     this.canvas=document.createElement('canvas');this.canvas.tabIndex=0;this.canvas.setAttribute('aria-label','3D viewport. Left-drag to orbit, right-drag to pan, and scroll to zoom.');this.canvas.style.touchAction='none';container.prepend(this.canvas);
@@ -78,18 +78,18 @@ export class Viewer {
     this.sceneRenderer=new SceneRenderer(this.meshRenderer,this.scene,this.camera);
     const single=this.options.singleShadow===true;
     this.shadows=new SunShadows({size:this.options.shadowMapSize??2048,splits:single?[100]:[80,400,1600,this.options.shadowDistance??8000],lightMargin:1000,normalBias:single?[.0015]:[.04,.1,.35,1],pcssCascades:1});this.shadows.layerMask=1<<LAYERS.OPAQUE;
-                                                                                 
-                                                                                 
+
+
     this.receiverShadows=new ReceiverShadowIntegration(this,this.options);
-                                                                              
-                                                                              
-                                                                           
-                                                               
+
+
+
+
     this.shadowGlobalHiZ=new ShadowGlobalHiZ(this,this.options);this.shadows.globalHiZ=this.shadowGlobalHiZ;
-                                                                                  
-                                                                                
-                                                                               
-                                                       
+
+
+
+
     this.shadowUnified=null;this.shadowCasterBatchingError=null;
     if(this.options.shadowCasterBatching!==false){
       try{this.shadowUnified=installShadowUnified(this);}
@@ -102,8 +102,8 @@ export class Viewer {
   resize(width,height){
     if(this.disposed||this.deviceFailure||!GPU.device||!this.sceneRenderer)return;const rect=this.container.getBoundingClientRect(),resolution=renderResolution(width??rect.width,height??rect.height,this.pixelRatio??1,this.renderScale,GPU.limits.maxTextureDimension2D);
     const {width:w,height:h,cssWidth,cssHeight}=resolution;this.renderResolution=resolution;
-                                                                              
-                                                                             
+
+
     this.canvas.style.width=cssWidth+'px';this.canvas.style.height=cssHeight+'px';
     if(w===this.canvas.width&&h===this.canvas.height)return;
     this.canvas.width=w;this.canvas.height=h;this.camera.aspect=w/h;this.camera.updateProjectionMatrix();this.cameraRevision++;this.sceneRenderer.setSize(w,h);const fov=this.camera.fov;this.renderPipeline?.setSize(w,h);this.camera.fov=fov;this.camera.updateProjectionMatrix();this.syncLens();this.depthSnapshot=null;this.opaqueSnapshot=null;FrameUniforms.fields.outputResolution.value.set(w,h);this.lighting?.resize?.(w,h);this.receiverShadows?.resize(w,h);
@@ -137,12 +137,18 @@ export class Viewer {
     if(this.staticNativeCasterBounds){const b=this.staticNativeCasterBounds;bounds=bounds?{min:bounds.min.map((x,i)=>Math.min(x,b.min[i])),max:bounds.max.map((x,i)=>Math.max(x,b.max[i]))}:b;}
     for(const system of this.meshRenderer.vegetationSystems){const b=system.casterBounds();if(b)bounds=bounds?{min:bounds.min.map((x,i)=>Math.min(x,b.min[i])),max:bounds.max.map((x,i)=>Math.max(x,b.max[i]))}:b;}
     for(const [root,b] of this.meshRenderer.nativeCasterBounds)if(root.visible)bounds=bounds?{min:bounds.min.map((x,i)=>Math.min(x,b.min[i])),max:bounds.max.map((x,i)=>Math.max(x,b.max[i]))}:b;
+    if(this.shadowFocus&&this.shadows.count===1){
+      const {center,radius}=this.shadowFocus;
+      if(!Array.isArray(center)||center.length!==3||!center.every(Number.isFinite)||!Number.isFinite(radius)||radius<=0)throw Error('Invalid shadow focus');
+      bounds={min:center.map(x=>x-radius),max:center.map(x=>x+radius)};
+    }
+    this.lastShadowBounds=bounds;
     const shadowPolicy=shadowCasterPolicy(this);this.lastShadowPolicy=shadowPolicy;
-                                                                               
-                                                                          
-                                                                             
-                                                                                
-                                                                         
+
+
+
+
+
     const multipleTerrains=terrains.length>1;
     if(this._multipleTerrainShadows!==multipleTerrains){this._multipleTerrainShadows=multipleTerrains;this.shadows.invalidateStateCache?.('terrain-count-change');this.shadowGlobalHiZ?.invalidate?.('terrain-count-change');for(const c of this.shadows.cascades)c.dirty=true;}
     if(multipleTerrains&&(this.shadows.pendingRestore||this.shadows.pendingCapture))this.shadows.invalidateStateCache?.('multiple-terrains');
@@ -167,9 +173,9 @@ export class Viewer {
     this.planarMirrors?.render();
     setFrameCamera(this.camera,this.canvas.width,this.canvas.height,{prevViewProj:this.prevViewProj,prevCameraPos:this.prevCameraPos});
     this.ocean?.prepareLighting();this.sceneRenderer.render();
-                                                                             
-                                                                                
-                                                         
+
+
+
     this.opaqueSnapshot={frame:this.frame,width:this.sceneRenderer.width,height:this.sceneRenderer.height,inverse:FrameUniforms.fields.invViewProj.value.clone(),viewProjection:FrameUniforms.fields.viewProj.value.clone(),view:FrameUniforms.fields.view.value.clone()};
     this.renderPipeline.render();
     this.receiverShadows?.markFrameEnd?.();
@@ -208,8 +214,8 @@ export class Viewer {
   }
   setGrassDensity(retention=DEFAULT_GRASS_RETENTION){
     this.grassDensityRetention=validateGrassRetention(retention);
-                                                                             
-                                                                      
+
+
     if(this.shadows?.cascades?.[0])this.shadows.cascades[0].dirty=true;
     this.receiverShadows?.forceAllCascades?.('grass-density');
     return retention;
@@ -226,9 +232,9 @@ export class Viewer {
   clearSceneAssets(){this.assetRoots.clear();this.poseModels.clear();}
   setAssetVisible(id,visible){const shown=setAssetVisible(this.assetRoots,id,visible);this.invalidateVisibility();return shown;}
   showOnlyAsset(id){const result=showOnlyAsset(this.assetRoots,id);if(result.ok)this.invalidateVisibility();return result;}
-                                                                                
-                                                                               
-                                                                             
+
+
+
   applyAssetPose(id,joints){
     const result=applyAssetPose(this.poseModels,id,joints,key=>assetRecord(this.assetRoots,key));
     const root=assetRecord(this.assetRoots,typeof id==='string'?id.trim():id)?.root??null;
@@ -243,8 +249,8 @@ export class Viewer {
     return {...row,url:row.url??metadata.url??null,source_glb:metadata.url??null,sha256:metadata.sha256??null,triangles:metadata.triangles??null,materials:metadata.materials??null,instances:metadata.instances??null};
   }
   assetStates(){return assetStates(this.assetRoots).map(row=>this.assetState(row.id));}
-                                                                            
-                                                                             
+
+
   assetVisibility(){return assetStates(this.assetRoots);}
   visibleAssetIds(){return visibleAssetRegistryIds(this.assetRoots);}
   async inspectVegetation(){
@@ -264,8 +270,8 @@ export class Viewer {
       const standalonePatch=options.independentModel&&isNativeGrassPatch(candidate.sceneData);
       const runtimeGrass=options.grass||!standalonePatch&&this.heightfield&&candidate.sceneData.extras?.planting?.grass_name;
       if(options.forbidSharedVegetation&&runtimeGrass)throw Error('Shared grass cannot be incrementally replaced');
-                                                                            
-                                                                           
+
+
       if(!runtimeGrass)candidate.vegetation?.setWaterExclusion?.(terrainWaterExclusion(this));
       if(runtimeGrass)await this.configureGrass(candidate,options.impostor,signal);
       if(options.overlay)configureSceneOverlay(this,candidate,options.overlay,LAYERS.TRANSPARENT);
@@ -322,8 +328,8 @@ export class Viewer {
     }finally{this.loading--;}
   });}
   fitScene({visibleOnly=false}={}){
-                                                                               
-                                                                            
+
+
     const shows=root=>root&&(visibleOnly?root.visible!==false:true);
     const box=new Box3().makeEmpty();
     if(shows(this.root))box.union(instanceAwareBounds(this.root));
@@ -354,8 +360,8 @@ export class Viewer {
       if(this.disposed||id!==this.loadId)throw Error('Stale heightfield load');
       if(beforeCommit)beforeCommit(api,prior);
       if(retainPriorOcean){
-                                                                            
-                                                                            
+
+
         const failures=[];const cleanup=fn=>{try{fn();}catch(error){failures.push(error.message);}};
         if(prior.ocean!==this.ocean)cleanup(()=>prior.ocean?.dispose());
         if(!preserveCompanions)cleanup(()=>this.clearMeshCompanions());
@@ -372,7 +378,7 @@ export class Viewer {
       if(cleanupError)throw new AggregateError([e,cleanupError],'Heightfield load and cleanup failed');throw e;
     }finally{this.retainedAssets.delete(prior);this.loading--;}
   }
-                                                                             
+
   startTaskHeightfield(url,{current,result}){return this.queueScene(async()=>{
     const box=this.assetRoots.get('starter-box'),sand=this.assetRoots.get('starter-sand-ground');
     const vegetation=[...this.meshCompanions].map(asset=>asset.vegetation).filter(Boolean);
@@ -412,8 +418,8 @@ export class Viewer {
       throw error;
     }
   });}
-                                                                         
-                                                                             
+
+
   async finishTaskHeightfield(boxUrl,sandUrl,{current,result}){
     const safe=()=>{
       const terrain=this.heightfield,record=this.assetRoots.get('task-terrain');
@@ -464,8 +470,8 @@ export class Viewer {
       if(!committed&&this.meshCompanions.has(sand)){this.meshCompanions.delete(sand);try{this.releaseAux(sand.root);sand.dispose();this.invalidateVisibility();}catch(_){}}
     }
   }
-                                                                          
-                                                                            
+
+
   replaceTaskHeightfield(url,{current,id,result}){return this.queueScene(async()=>{
     const record=this.assetRoots.get(id),terrain=this.heightfield;
     const vegetation=[...this.meshCompanions].map(asset=>asset.vegetation).filter(Boolean);
@@ -502,9 +508,9 @@ export class Viewer {
       if(options.grass){
         if(!isNativeGrassPatch(candidate.sceneData))throw Error('Standalone grass preview requires a verified native API patch');
         if(candidate.sceneData.extras.request?.impostor===true&&!options.impostor)throw Error('Native grass preview requires its requested impostor reference');
-                                                                           
-                                                                               
-                                                                                 
+
+
+
         const proxy=options.impostor?await loadGrassImpostor(this,candidate,options.impostor,signal):null;
         const dispose=candidate.dispose,metadata=candidate.metadata;
         candidate.grassPrototypePreview={native_patch:true,terrain_screen_sampling:false,impostor:proxy?.metadata()??null};
@@ -517,8 +523,8 @@ export class Viewer {
       if(signal?.aborted||id!==this.loadId||this.disposed)throw Error('Mesh load superseded/disposed');
       if(options.beforeCommit)options.beforeCommit(candidate,prior);
       if(options.retainPriorOcean){
-                                                                        
-                                                         
+
+
         const failures=[],cleanup=fn=>{try{fn();}catch(error){failures.push(error.message);}};
         if(!options.preserveCompanions)cleanup(()=>this.clearMeshCompanions());
         this.oceanLoadId++;cleanup(()=>prior.ocean?.dispose());cleanup(()=>this.releaseAux(prior.root));
@@ -599,13 +605,13 @@ export class Viewer {
     this.meshRenderer?.pipelinePreparationErrors?.clear();
     this.staticOcclusion?.ensureTerrain();
     this.meshRenderer?.prepareStaticDraw?.(this.scene,[this.camera]);
-                                                                           
-                                                                          
-                                                                
+
+
+
     try{await this.receiverShadows?.ensureReady(this);}catch(error){this.receiverShadows?.fail(error);}
-                                                                              
-                                                                            
-                                                                       
+
+
+
     try{this.shadowGlobalHiZ?.ensureReady(this);}catch(error){this.shadowGlobalHiZ?.invalidate?.('compile');if(this.shadowGlobalHiZ)this.shadowGlobalHiZ.lastError={stage:'compile',message:String(error?.message??error)};}
     this.loading++;
     const wait=(operation,stage)=>{const cache=GPU.pipelineCacheMetadata();this.options.onLoadProgress?.(stage+' · '+cache.pipelines+' distinct pipelines · '+cache.hits+' cache hits');return this.deviceHealth?this.deviceHealth.wait(operation,stage):operation();};
@@ -643,12 +649,12 @@ export class Viewer {
     this.frameWorkDiagnostics?.dispose();
     if(this.disposed)return;this.terrainIntervention?.dispose();this.disposed=true;this.deviceHealth?.dispose();this.recoveryPanel?.remove();this.sceneEpoch++;this.loadId++;this.oceanLoadId++;this.frameLoop?.stop();this.observer?.disconnect();if(this.resizeFrame!==null&&this.resizeFrame!==undefined){cancelAnimationFrame(this.resizeFrame);this.resizeFrame=null;}this.navigation.dispose();this.clearSceneAssets();this.clearMeshCompanions();this.clearTaskHeightfields();this.inlandOptics=null;this.clearOcean();this.heightfield?.dispose();this.releaseAux(this.meshAsset?.root);this.meshAsset?.dispose();for(const prior of this.retainedAssets){this.releaseAux(prior.root);prior.terrain?.dispose();prior.mesh?.dispose();}this.retainedAssets.clear();this.planarMirrors?.dispose();this.pointShadows?.dispose();this.staticOcclusion?.dispose();for(const c of this.components)c.dispose?.();this.components.clear();this.renderPipeline?.dispose();this.lighting?.dispose();
     if(this.grid){this.grid.geometry.dispose();this.grid.material.dispose();this.grid.material.uniformBlock.buffer?.destroy();}
-                                                                                
-                                                                                 
-                                               
+
+
+
     try{this.receiverShadows?.detachRenderer?.();}catch(error){this.receiverShadowDisposeError={stage:'detach',message:String(error?.message??error)};}
-                                                                                
-                                                      
+
+
     try{uninstallShadowUnified(this);}catch(error){this.shadowCasterBatchingError={stage:'dispose',message:String(error?.message??error)};}
     this.shadowUnified=null;
     try{this.shadowGlobalHiZ?.dispose?.();}catch(error){this.shadowGlobalHiZDisposeError={stage:'dispose',message:String(error?.message??error)};}

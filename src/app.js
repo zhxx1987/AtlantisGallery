@@ -190,33 +190,6 @@ async function showWork() {
     message.hidden = false;
   });
 
-  if (item.vehicleEntry) {
-    const repository = /^https:\/\/github\.com\/([\w-]+)\/(atlantis-[\w-]+)$/.exec(item.assetRepository || '');
-    const controller = new URL(item.vehicleEntry);
-    if (!repository || controller.origin !== `https://${repository[1].toLowerCase()}.github.io` ||
-        !controller.pathname.startsWith('/' + repository[2] + '/')) {
-      throw new Error('Vehicle entry must belong to the creator’s Gallery asset repository.');
-    }
-    const inspect = params.get('view') === 'model';
-    const actions = document.querySelector('.stage-actions');
-    const link = document.createElement('a');
-    const destination = workUrl(item.id, readPage(params));
-    if (!inspect) destination.searchParams.set('view', 'model');
-    link.href = destination.href;
-    link.className = 'file-button';
-    link.textContent = inspect ? 'Operate Vehicle' : 'Inspect Model';
-    if (!inspect) {
-      const ride = document.createElement('iframe');
-      ride.className = 'ride-frame';
-      ride.title = item.title + ' · operating controls';
-      ride.sandbox = 'allow-scripts allow-same-origin allow-pointer-lock';
-      ride.src = controller.href;
-      $('stage').replaceChildren(ride);
-      actions.replaceChildren(link);
-      return;
-    }
-    actions.prepend(link);
-  }
 
   try {
     const { GalleryViewer } = await import('./viewer.js');
@@ -233,7 +206,9 @@ async function showWork() {
       console.error(error);
     }
     try {
+      if(item.vehicleController)spec.vehicle=item.vehicleController;
       const result = await viewer.load(item.model, spec);
+      window.galleryViewer=viewer;
       setModelActions(result);
       const issues = [interactionWarning, ...result.errors].filter(Boolean);
       status.textContent = issues.join(' · ');

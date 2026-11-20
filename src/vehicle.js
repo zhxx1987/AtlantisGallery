@@ -1,6 +1,7 @@
 import {PythonLogic} from './python-logic.js';
+import {vehicleMode} from './vehicle-mode.js';
 
-export async function installPythonVehicle(viewer,descriptor,modelURL,container){
+export async function installPythonVehicle(viewer,descriptor,modelURL,container,onMode=()=>{}){
   const module=new URL(descriptor.module,modelURL).href;
   const response=await fetch(new URL(descriptor.config,modelURL));
   if(!response.ok)throw Error('Vehicle configuration HTTP '+response.status);
@@ -23,14 +24,12 @@ export async function installPythonVehicle(viewer,descriptor,modelURL,container)
   const listen=(target,name,fn,options={})=>target.addEventListener(name,fn,{...options,signal:abort.signal});
   const input=()=>({enabled,brake:keys.has('Space'),throttle:Number(keys.has('KeyW'))-Number(keys.has('KeyS')),steer:Number(keys.has('KeyA'))-Number(keys.has('KeyD')),aim_yaw:yaw,elevation});
   const send=()=>logic.event('input',input());
-  const setMode=value=>{
-    enabled=value;keys.clear();rmb=false;viewer.controls.enabled=!value;
+  const sharedMode=vehicleMode(viewer,value=>{
+    enabled=value;keys.clear();rmb=false;onMode(value);
     for(const key of physical)blocked.add(key);
-    mode.textContent=value?'ESC · Return to Viewport':'F1 · Enter Vehicle Mode';
-    viewer.canvas.dataset.vehicleMode=value?'vehicle':'viewport';
-    if(!value&&document.pointerLockElement===viewer.canvas)document.exitPointerLock();
-    if(value){viewer.canvas.focus();viewer.canvas.requestPointerLock?.()?.catch(()=>{});}send();
-  };
+    mode.textContent=value?'ESC · Return to Viewport':'F1 · Enter Vehicle Mode';send();
+  });
+  const setMode=value=>sharedMode.set(value);
   const camera=()=>{
     if(!enabled||!last)return;
     const s=last.state,target=[s.x,config.ground_lift+(s.z??0)+1.3,-s.y],h=distance*Math.cos(pitch);
@@ -81,12 +80,12 @@ export async function installPythonVehicle(viewer,descriptor,modelURL,container)
   listen(viewer.canvas,'pointerdown',e=>{
     if(!enabled)return;
     e.preventDefault();rmb=e.button===2;
-    if(document.pointerLockElement!==viewer.canvas)viewer.canvas.requestPointerLock?.();
+    if(document.pointerLockElement!==viewer.canvas){try{Promise.resolve(viewer.canvas.requestPointerLock?.()).catch(()=>{});}catch{}}
   });
   listen(window,'pointerup',e=>{if(e.button===2)rmb=false;});
   listen(document,'pointerlockchange',()=>{if(!document.pointerLockElement){keys.clear();rmb=false;send();}});
   listen(window,'mousemove',e=>{
-    if(!enabled||document.pointerLockElement!==viewer.canvas)return;
+    if(!enabled)return;
     const sensitivity=.12*Math.PI/180;yaw-=e.movementX*sensitivity;
     pitch=Math.max(5*Math.PI/180,Math.min(75*Math.PI/180,pitch+e.movementY*sensitivity));
     if(rmb)elevation=Math.max(config.gun_min,Math.min(config.gun_max,elevation-e.movementY*sensitivity));
@@ -95,5 +94,5 @@ export async function installPythonVehicle(viewer,descriptor,modelURL,container)
   listen(viewer.canvas,'wheel',e=>{if(enabled){e.preventDefault();distance=Math.max(4,Math.min(24,distance+e.deltaY*.01));camera();}},{passive:false,capture:true});
   const component={update:()=>logic.update()};viewer.addComponent(component);
   setMode(false);
-  return {exit:()=>setMode(false),dispose(){disposed=true;setMode(false);abort.abort();logic.dispose();viewer.removeComponent(component);p.remove();delete viewer.canvas.dataset.pythonReady;delete viewer.canvas.dataset.pythonState;}};
+  return {get enabled(){return enabled;},getFocus:()=>last?[last.state.x,config.ground_lift+(last.state.z??0)+1.3,-last.state.y]:null,exit:()=>setMode(false),dispose(){disposed=true;setMode(false);sharedMode.dispose();abort.abort();logic.dispose();viewer.removeComponent(component);p.remove();delete viewer.canvas.dataset.pythonReady;delete viewer.canvas.dataset.pythonState;}};
 }

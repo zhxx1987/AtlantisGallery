@@ -24,10 +24,19 @@
   ],
   "interaction": "https://zhxx1987.github.io/atlantis-ember-29/gallery-0be900fbaa6358b9b4fdc733cd25e2b3a78a323915005fd64d7f56a966b90e0f/interaction.json",
   "assetRepository": "https://github.com/zhxx1987/atlantis-ember-29",
-  "vehicleEntry": "https://zhxx1987.github.io/atlantis-ember-29/ride/",
   "operableVehicle": true,
   "packageLayout": "model-controls-source/1",
   "isaacRuntimes": [
     "game"
-  ]
+  ],
+  "vehicleController": {
+    "schema": "atlantis-gallery-vehicle/1",
+    "profile": "ember-29",
+    "base": "https://zhxx1987.github.io/atlantis-ember-29/ride/",
+    "assets": {
+      "course": "trail.glb"
+    },
+    "renderer": "gallery-shared",
+    "thirdPersonCursor": "hidden"
+  }
 }

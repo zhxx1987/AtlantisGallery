@@ -14,12 +14,13 @@ export function packageInstructions(item) {
     'There are exactly three current downloads: model assets, combined controls (simplified game and native real physics when supplied), and editable modeling source. Use the current links below; do not retrieve older separate motion archives.',
     'Extract the MODEL and CONTROLS archives into the SAME dedicated directory, preserving their relative paths. Model assets alone do not enable driving. For an existing installation, close its running controller and replace the old files with the current packages; use a fresh directory if its layout differs.',
     'The MODELING SOURCE archive is for rebuilding or editing geometry. Extract it into a separate source directory and read its rebuild instructions; it is not required to drive the exported model.',
+    ...(isVehicle(item) ? [vehiclePresentation] : []),
     'Read ASSEMBLE_ISAAC.md, ASSEMBLE_GAME_ENGINE.md and isaac-runtimes.json in the combined controls package. Resolve the selected entry point against the model files before launching. Keep exactly one driving controller active per vehicle instance.',
   ];
 }
 
 export function isVehicle(item, spec) {
-  return !!(item.operableVehicle || item.vehicleEntry || item.isaacRuntimes || spec?.logic?.profile === 'vehicle');
+  return !!(item.operableVehicle || item.vehicleController || item.vehicleEntry || item.isaacRuntimes || spec?.logic?.profile === 'vehicle');
 }
 
 export const vehicleDynamics = [
@@ -33,3 +34,5 @@ export const vehicleAcceptance = [
   'Exercise real keyboard/mouse input: start, coast, hard brake to hold with a mild nose dip that settles, stop-before-reverse, differential steering, a one-sided bump, slope, airborne landing and loss-of-focus input release. Check stability at 30/60/144 render FPS with a fixed simulation step.',
   'Observe actual wheel/arm/track transforms and visible terrain contact. Report the selected runtime, exact files, engine version and measured results; identify untested native physics behavior explicitly.',
 ];
+
+export const vehiclePresentation = 'For third-person vehicle controls, hide the mouse cursor with capture and a cursor:none fallback; restore it and release inputs on Esc, blur, hidden tab or capture loss. In Gallery, inspection and driving share the exact same Viewer, renderer, canvas, lighting, shadow and post-processing instances. Only add the driving scene and logic. Keep the 2048-square shadow footprint near the vehicle and follow travel; never fit it to the whole course.';
