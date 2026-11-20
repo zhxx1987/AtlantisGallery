@@ -3,14 +3,18 @@
     "id": "t10-heavy-tank",
     "title": "T-10 Heavy Tank",
     "creator": "zhxx1987",
-    "description": "Drive the T-10 in third person in the viewer below. Select Inspect Model to explore its cast turret, hatches and seven road wheels per side. The download includes the Isaac Sim physics scene.",
+    "description": "Drive the T-10 in third person on this page. Includes braking and coasting, stop-before-reverse, articulated suspension and ground contact, mild brake dive with damped settling, and airborne/landing behavior. Download the complete model, editable simplified-driving code or native Isaac Sim controller.",
     "vehicleEntry": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/drive/",
     "model": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/preview/T10.glb",
     "thumbnail": "./models/t10-heavy-tank/preview.webp",
     "downloads": [
       {
         "label": "Download Model and Motion Files",
-        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/isaac-drive-v3-32eea793ed9a/model.zip"
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/game-suspension-v4-1b5c8c1ea12d/model.zip"
+      },
+      {
+        "label": "Download Simplified Driving Code",
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/game-suspension-v4-1b5c8c1ea12d/simplified-driving-code.zip"
       },
       {
         "label": "Download Isaac Sim Physics Code",
