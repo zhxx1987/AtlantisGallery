@@ -72,28 +72,33 @@
     "id": "tiger-ii",
     "title": "Tiger II · King Tiger",
     "creator": "zhxx1987",
-    "description": "PBR Tiger II with English WASD and mouse controls, procedural tracks, and six hatch buttons. Download both Game and Real Physics Isaac runtimes, complete editable Python modeling code, and assembly instructions.",
+    "description": "Drive the Tiger II on this Gallery page. Simplified driving includes braking/hold, coasting, stop-before-reverse, articulated suspension and ground contact, mild brake dive with damped settling, and airborne/landing behavior. Three downloads: model assets, combined game + native real-physics controls, and editable modeling source. Extract model and controls together to drive.",
     "model": "./models/tiger-ii/preview/model/tiger_ii.glb",
     "thumbnail": "./models/tiger-ii/preview.webp",
     "interaction": "./models/tiger-ii/interaction.json",
     "downloads": [
       {
-        "label": "Download USD + Game + Real Physics",
-        "url": "https://github.com/zhxx1987/AtlantisGallery/releases/download/tiger-ii-realtime-v015/tiger-ii-model.zip"
+        "kind": "model",
+        "label": "Download Model",
+        "url": "https://github.com/zhxx1987/AtlantisGallery/releases/download/tiger-ii-suspension-v1-1cd38a3050b8/tiger-ii-model.zip"
       },
       {
-        "label": "Download Complete Modeling Code",
-        "url": "https://github.com/zhxx1987/AtlantisGallery/releases/download/tiger-ii-realtime-v015/tiger-ii-modeling-code.zip"
+        "kind": "controls",
+        "label": "Download Controls (Game + Real Physics)",
+        "url": "https://github.com/zhxx1987/AtlantisGallery/releases/download/tiger-ii-suspension-v1-1cd38a3050b8/tiger-ii-controls.zip"
       },
       {
-        "label": "Download Work Order (JSON)",
-        "url": "https://github.com/zhxx1987/AtlantisGallery/releases/download/tiger-ii-realtime-v015/tiger-ii-work-order.json"
+        "kind": "modeling-source",
+        "label": "Download Modeling Source",
+        "url": "https://github.com/zhxx1987/AtlantisGallery/releases/download/tiger-ii-suspension-v1-1cd38a3050b8/tiger-ii-modeling-code.zip"
       }
     ],
     "isaacRuntimes": [
       "game",
       "real-physics"
-    ]
+    ],
+    "packageLayout": "model-controls-source/1",
+    "operableVehicle": true
   },
   {
     "id": "microwave",
