@@ -25,6 +25,7 @@ export function isVehicle(item, spec) {
 export const vehicleDynamics = [
   'Simplified ground-vehicle driving must include acceleration, coasting, active braking and parking hold, stop-before-reverse, ground-contact traction, bounded per-wheel spring/damper suspension, terrain-aligned body pitch/roll, mild hard-brake nose dip with damped settling, no airborne traction and landing response.',
   'Bind road wheels, suspension arms and the closed track path to the actual model pivots and travelled distance. Preserve authored controls and a third-person driving camera. Use a fixed simulation timestep with a persistent accumulator and release input safely on lost focus.',
+  'Apply each feature to the actual vehicle construction. Stop-before-reverse applies only when powered reverse exists; differential steering applies to suitable vehicles. Bind only wheels, arms and tracks that exist. For a hardtail bicycle, preserve its rigid rear end and front fork; do not invent a reverse gear, rear suspension or tracks.',
   'Native real physics uses its own engine solver and controller. Never superimpose the simplified suspension or procedural body integration on a vehicle already driven by native rigid-body physics. Native Isaac PhysX code requires Isaac Sim; it is not executable browser physics.',
 ];
 
