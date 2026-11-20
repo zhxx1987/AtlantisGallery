@@ -3,30 +3,34 @@
     "id": "t10-heavy-tank",
     "title": "T-10 Heavy Tank",
     "creator": "zhxx1987",
-    "description": "Drive the T-10 in third person on this page. Includes braking and coasting, stop-before-reverse, articulated suspension and ground contact, mild brake dive with damped settling, and airborne/landing behavior. Download the complete model, editable simplified-driving code or native Isaac Sim controller.",
+    "description": "Drive the T-10 on this Gallery page. Simplified driving includes braking/hold, coasting, stop-before-reverse, articulated suspension and ground contact, mild brake dive with damped settling, and airborne/landing behavior. Three downloads: model assets, combined game + native real-physics controls, and editable modeling source. Extract model and controls together to drive.",
     "vehicleEntry": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/drive/",
     "model": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/preview/T10.glb",
     "thumbnail": "./models/t10-heavy-tank/preview.webp",
     "downloads": [
       {
-        "label": "Download Model and Motion Files",
-        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/game-suspension-v4-1b5c8c1ea12d/model.zip"
+        "kind": "model",
+        "label": "Download Model",
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/vehicle-packages-v5a-16e3258ba9bd/model.zip"
       },
       {
-        "label": "Download Simplified Driving Code",
-        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/game-suspension-v4-1b5c8c1ea12d/simplified-driving-code.zip"
+        "kind": "controls",
+        "label": "Download Controls (Game + Real Physics)",
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/vehicle-packages-v5a-16e3258ba9bd/controls.zip"
       },
       {
-        "label": "Download Isaac Sim Physics Code",
-        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/isaac-drive-v3-32eea793ed9a/real-physics-code.zip"
-      },
-      {
-        "label": "Download Modeling Code",
-        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/modeling-code.zip"
+        "kind": "modeling-source",
+        "label": "Download Modeling Source",
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/vehicle-packages-v5a-16e3258ba9bd/modeling-code.zip"
       }
     ],
     "interaction": "https://zhxx1987.github.io/atlantis-t10-heavy-tank/gallery-07975e4a47bff6956d4bca464176298a2508a50366a959524b2954e5bc223a6c/interaction.json",
-    "assetRepository": "https://github.com/zhxx1987/atlantis-t10-heavy-tank"
+    "assetRepository": "https://github.com/zhxx1987/atlantis-t10-heavy-tank",
+    "packageLayout": "model-controls-source/1",
+    "operableVehicle": true,
+    "isaacRuntimes": [
+      "real-physics"
+    ]
   },
   {
     "id": "viktologist-iphone-duo",
