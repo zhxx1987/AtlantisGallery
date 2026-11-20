@@ -20,6 +20,34 @@ MAX_RELEASE_FILE = 2 * 1024 * 1024 * 1024
 MAX_THUMBNAIL = 1024 * 1024
 STORAGE = 'creator-pages-and-releases/1'
 SCHEMA = 'atlantis-gallery-submission/1'
+PACKAGE_LAYOUT = 'model-controls-source/1'
+CONTROL_TYPES = {'.py', '.js', '.mjs', '.css', '.wasm', '.html'}
+ASSEMBLY_GUIDANCE = '''Extract model.zip and controls.zip into the SAME dedicated directory,
+preserving relative paths. Keep modeling-code.zip in a separate source directory.
+Use the current work-page downloads when updating; replace the previous controller files.
+Read the supplied runtime manifests and entry points before launching. Activate one
+controller per model instance. Do not infer an unavailable runtime from a download label.
+Simplified ground vehicles require acceleration, coasting, braking and parking hold,
+stop-before-reverse, ground-contact traction, bounded per-wheel spring/damper suspension,
+terrain pitch/roll, mild brake dive with damped settling, airborne and landing response.
+Bind actual wheels, arms and tracks to their pivots and travelled distance. Use a fixed
+timestep and safe input release on lost focus. Exercise controls and observed transforms.
+Native real physics must use its own solver without duplicate procedural integration.
+'''
+
+
+def assembly_document(runtime):
+    if runtime == 'isaac':
+        specific = ('Use the selected mode in isaac-runtimes.json when supplied. Resolve its entry, '
+                    'USD and dependencies in the merged directory. Native PhysX requires Isaac Sim; '
+                    'browser/Pyodide code alone is not a native Isaac adapter. If no Isaac adapter '
+                    'is supplied, implement and test one before claiming Isaac support.')
+    else:
+        specific = ('For Unreal, Unity or Godot, preserve authored key mappings, units, pivots and '
+                    'part hierarchy. Adapt the portable motion core and host input/render bindings. '
+                    'Isaac omni/pxr/PhysX Python cannot run unchanged in another engine. Use that '
+                    'engine\'s native solver for real physics and test braking, contact and suspension.')
+    return '# Assemble in ' + ('Isaac Sim' if runtime == 'isaac' else 'a Game Engine') + '\n\n' + ASSEMBLY_GUIDANCE + '\n' + specific + '\n'
 
 
 def read_json(path):
@@ -95,10 +123,23 @@ def stage_package(manifest, output):
     dependencies = DEPENDENCY_TYPES | {'.js', '.mjs', '.css', '.wasm', '.html', '.ogg', '.mp3', '.wav'} if entry else DEPENDENCY_TYPES
     for name in files_field(data, 'previewFiles'):
         preview[name] = relative_file(root, name, dependencies)
-    model_archive = preview | {
+    model_archive = {
+        name: path for name, path in preview.items()
+        if PurePosixPath(name).suffix.lower() not in CONTROL_TYPES
+    } | {
         name: relative_file(root, name)
-        for name in files_field(data, 'modelFiles') + files_field(data, 'motionFiles')
+        for name in files_field(data, 'modelFiles')
     }
+    controls = {
+        name: path for name, path in preview.items()
+        if PurePosixPath(name).suffix.lower() in CONTROL_TYPES
+    } | {
+        name: relative_file(root, name)
+        for name in files_field(data, 'motionFiles') + files_field(data, 'controlFiles')
+    }
+    # Explicit controls win classification; the two archives merge without collisions.
+    for name in controls:
+        model_archive.pop(name, None)
     sources = {name: relative_file(root, name) for name in files_field(data, 'sourceFiles')}
     if not sources:
         raise ValueError('List the final modeling code for all parts in sourceFiles.')
@@ -133,7 +174,8 @@ def stage_package(manifest, output):
                     name = posixpath.normpath(posixpath.join(posixpath.dirname(model), reference))
                     if name not in preview:
                         raise ValueError(f'List the vehicle {field} in previewFiles: {name}')
-        model_archive[data['interaction']] = interaction
+        controls[data['interaction']] = interaction
+        model_archive.pop(data['interaction'], None)
     if native_vehicle and not operable:
         raise ValueError('Declare operableVehicle=true for this vehicle controller.')
     if operable and not (entry or native_vehicle):
@@ -143,6 +185,29 @@ def stage_package(manifest, output):
         work_order = relative_file(root, data['workOrder'], {'.json'})
         if not isinstance(read_json(work_order), (dict, list)):
             raise ValueError('workOrder must be a JSON object or array.')
+        # Reviewed work orders belong to the editable source package, not a fourth download.
+        sources[data['workOrder']] = work_order
+    runtimes = data.get('isaacRuntimes', [])
+    if not isinstance(runtimes, list) or not all(isinstance(name, str) for name in runtimes) or len(set(runtimes)) != len(runtimes) or any(
+        name not in ('game', 'real-physics') for name in runtimes
+    ):
+        raise ValueError('isaacRuntimes must list supplied game and/or real-physics adapters.')
+    if runtimes:
+        runtime_file = controls.get('isaac-runtimes.json')
+        if not runtime_file:
+            raise ValueError('List isaac-runtimes.json in controlFiles for advertised Isaac runtimes.')
+        runtime_data = read_json(runtime_file)
+        if not isinstance(runtime_data, dict) or not isinstance(runtime_data.get('modes'), dict):
+            raise ValueError('isaac-runtimes.json must contain a modes object.')
+        modes = runtime_data.get('modes', {})
+        for mode in runtimes:
+            detail = modes.get(mode, {})
+            if not isinstance(detail, dict):
+                raise ValueError(f'Isaac {mode} must define an entry and USD.')
+            for field in ('entry', 'usd'):
+                if detail.get(field) not in model_archive | controls:
+                    raise ValueError(f'Isaac {mode}.{field} must name a packaged file.')
+        metadata['isaacRuntimes'] = runtimes
 
     preview_bytes = sum(path.stat().st_size for path in preview.values())
     if preview_bytes > MAX_PREVIEW_TOTAL:
@@ -155,23 +220,33 @@ def stage_package(manifest, output):
         dest = output / 'preview' / name
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, dest)
-    # Archive the same preview bytes that will be uploaded to the viewer.
-    model_archive.update({name: output / 'preview' / name for name in preview})
+    # Both archives use the same preview bytes that will be uploaded to the viewer.
+    for archive in (model_archive, controls):
+        archive.update({name: output / 'preview' / name for name in preview if name in archive})
+    generated = output / '.assembly-documents'
+    generated.mkdir()
+    for filename, runtime in (('ASSEMBLE_ISAAC.md', 'isaac'), ('ASSEMBLE_GAME_ENGINE.md', 'engine')):
+        if filename not in controls:
+            path = generated / filename
+            path.write_text(assembly_document(runtime), encoding='utf-8')
+            controls[filename] = path
+        model_archive.pop(filename, None)
     thumbnail_name = 'preview' + thumbnail.suffix.lower()
     shutil.copyfile(thumbnail, output / thumbnail_name)
     zip_files(output / 'model.zip', model_archive)
+    zip_files(output / 'controls.zip', controls)
     zip_files(output / 'modeling-code.zip', sources)
+    shutil.rmtree(generated)
     metadata.update(model='preview/' + quote(model), thumbnail=thumbnail_name)
     metadata['downloads'] = [
-        {'label': 'Download Model and Motion Files', 'file': 'model.zip'},
-        {'label': 'Download Modeling Code', 'file': 'modeling-code.zip'},
+        {'kind': 'model', 'label': 'Download Model', 'file': 'model.zip'},
+        {'kind': 'controls', 'label': 'Download Controls', 'file': 'controls.zip'},
+        {'kind': 'modeling-source', 'label': 'Download Modeling Source', 'file': 'modeling-code.zip'},
     ]
+    metadata.update(packageLayout=PACKAGE_LAYOUT, operableVehicle=operable)
     if interaction:
         shutil.copyfile(interaction, output / 'interaction.json')
         metadata['interaction'] = 'interaction.json'
-    if work_order:
-        shutil.copyfile(work_order, output / 'work-order.json')
-        metadata['downloads'].append({'label': 'Download Work Order', 'file': 'work-order.json'})
 
     storage = {
         'schema': STORAGE,
@@ -193,7 +268,7 @@ def stage_package(manifest, output):
             raise ValueError(f'{name} exceeds the 2 GiB release asset limit. Split the download package.')
         with path.open('rb') as stream:
             checksum = hashlib.file_digest(stream, 'sha256').hexdigest()
-        destination = 'creator-releases' if name in {'model.zip', 'modeling-code.zip', 'work-order.json'} else 'creator-pages'
+        destination = 'creator-releases' if name in {'model.zip', 'controls.zip', 'modeling-code.zip'} else 'creator-pages'
         if name == thumbnail_name:
             destination = 'gallery-thumbnail'
         if destination == 'creator-pages' and size >= MAX_PREVIEW_FILE:
@@ -209,6 +284,7 @@ def stage_package(manifest, output):
         'storage': storage,
         'files': public_files,
         'model_archive_contents': sorted(model_archive),
+        'control_archive_contents': sorted(controls),
         'code_archive_contents': sorted(sources),
         'work_order_included': work_order is not None,
         'approval_digest': digest.hexdigest(),
@@ -225,7 +301,7 @@ def catalog_entry(asset_id, plan, hosting):
             entry[field] = base + entry[field]
     entry['thumbnail'] = f'./models/{asset_id}/' + entry['thumbnail']
     entry['downloads'] = [
-        {'label': item['label'], 'url': hosting['download_urls'][item['file']]}
+        {'kind': item['kind'], 'label': item['label'], 'url': hosting['download_urls'][item['file']]}
         for item in entry['downloads']
     ]
     entry['assetRepository'] = hosting['repository_url']
@@ -242,7 +318,13 @@ def check_catalog_slot(checkout, asset_id, entry):
         existing = read_json(record)
         existing.pop('publishedAt', None)
     if existing and existing != entry:
-        raise ValueError(f'{asset_id} already exists. Pick a new slug to submit a new work.')
+        # Creator repositories are checked against the signed-in owner before publication.
+        # Permit updating that same creator's individual record, preserving its work ID.
+        if not record.exists() or not existing.get('assetRepository') or (
+            existing['assetRepository'] != entry.get('assetRepository')
+            or existing.get('creator') != entry.get('creator')
+        ):
+            raise ValueError(f'{asset_id} belongs to another record or creator. Do not overwrite it.')
     destination = checkout / 'models' / asset_id
     if not existing and destination.exists():
         raise ValueError(f'{asset_id} already has Gallery files. Pick a new slug.')
@@ -256,8 +338,18 @@ def add_to_catalog(checkout, asset_id, package, plan, hosting):
     if existing or destination.exists():
         thumbnail = destination / plan['metadata']['thumbnail']
         expected = next(item for item in plan['files'] if item['destination'] == 'gallery-thumbnail')
-        if existing == entry and thumbnail.is_file() and hashlib.sha256(thumbnail.read_bytes()).hexdigest() == expected['sha256']:
+        merged = {**existing, **entry} if existing else entry
+        same_thumbnail = thumbnail.is_file() and hashlib.sha256(thumbnail.read_bytes()).hexdigest() == expected['sha256']
+        if existing == merged and same_thumbnail:
             return False
+        record = checkout / '_data' / 'works' / (asset_id + '.json')
+        if existing and record.exists():
+            original = read_json(record)
+            merged = {**original, **entry}
+            destination.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(package / plan['metadata']['thumbnail'], thumbnail)
+            write_json(record, merged)
+            return True
         raise ValueError(f'{asset_id} already exists. Pick a new slug to submit a new work.')
 
     destination.mkdir(parents=True)

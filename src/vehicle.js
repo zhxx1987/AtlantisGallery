@@ -6,7 +6,7 @@ export async function installPythonVehicle(viewer,descriptor,modelURL,container)
   if(!response.ok)throw Error('Vehicle configuration HTTP '+response.status);
   const config=await response.json();
   const p=document.createElement('section');p.setAttribute('aria-label','Vehicle Controls');container.replaceChildren(p);
-  const help=document.createElement('p');help.textContent='WASD: drive · Mouse: orbit / turret aim · RMB: gun elevation · Wheel: zoom · R: reset · F1: vehicle / ESC: viewport';p.append(help);
+  const help=document.createElement('p');help.textContent='WASD: drive · Space: brake / hold · Mouse: orbit / turret aim · RMB: gun elevation · Wheel: zoom · R: reset · F1: vehicle / ESC: viewport';p.append(help);
   const mode=document.createElement('button');mode.textContent='F1 · Enter Vehicle Mode';p.append(mode);
   const hatchButtons=[];
   const labels={hull_hatch_L:'Driver Hatch',hull_hatch_R:'Radio Operator Hatch',commander_hatch:'Commander Hatch',loader_hatch:'Loader Hatch',turret_rear_hatch:'Turret Rear Hatch',engine_service_cover:'Engine Service Cover'};
@@ -21,7 +21,7 @@ export async function installPythonVehicle(viewer,descriptor,modelURL,container)
   for(const name of required)if(!nodes.has(name))throw Error('Vehicle node missing: '+name);
   let enabled=false,rmb=false,yaw=0,pitch=22*Math.PI/180,distance=12,elevation=0,last=null,disposed=false;
   const listen=(target,name,fn,options={})=>target.addEventListener(name,fn,{...options,signal:abort.signal});
-  const input=()=>({enabled,throttle:Number(keys.has('KeyW'))-Number(keys.has('KeyS')),steer:Number(keys.has('KeyA'))-Number(keys.has('KeyD')),aim_yaw:yaw,elevation});
+  const input=()=>({enabled,brake:keys.has('Space'),throttle:Number(keys.has('KeyW'))-Number(keys.has('KeyS')),steer:Number(keys.has('KeyA'))-Number(keys.has('KeyD')),aim_yaw:yaw,elevation});
   const send=()=>logic.event('input',input());
   const setMode=value=>{
     enabled=value;keys.clear();rmb=false;viewer.controls.enabled=!value;
@@ -33,7 +33,7 @@ export async function installPythonVehicle(viewer,descriptor,modelURL,container)
   };
   const camera=()=>{
     if(!enabled||!last)return;
-    const s=last.state,target=[s.x,config.ground_lift+1.3,-s.y],h=distance*Math.cos(pitch);
+    const s=last.state,target=[s.x,config.ground_lift+(s.z??0)+1.3,-s.y],h=distance*Math.cos(pitch);
     viewer.setCamera({position:[target[0]-h*Math.cos(yaw),target[1]+distance*Math.sin(pitch),target[2]+h*Math.sin(yaw)],target});
   };
   const logic=new PythonLogic({module,config},snapshot=>{
@@ -47,15 +47,16 @@ export async function installPythonVehicle(viewer,descriptor,modelURL,container)
     last=snapshot;
     // A worker heartbeat is not scene motion: preserve picking depth while the model is stationary.
     if(transformsChanged){viewer.invalidateObjectTransforms?.([nodes.get('hull')]);viewer.depthSnapshot=null;for(const cascade of viewer.shadows?.cascades??[])cascade.dirty=true;}
-    output.textContent=`Python · ${((snapshot.state.left_speed+snapshot.state.right_speed)*1.8).toFixed(1)} km/h`;
+    const s=snapshot.state;
+    output.textContent=`Python · ${((s.speed??(s.left_speed+s.right_speed)/2)*3.6).toFixed(1)} km/h · Ground contact ${s.grounded??18}/18 · ${s.braking?'Braking / hold':'Driving / coasting'}`;
     viewer.canvas.dataset.pythonState=JSON.stringify(snapshot.state);
     viewer.canvas.dataset.pythonReady='true';camera();
     viewer.canvas.dataset.motionProof=JSON.stringify({
       schema:'atlantis-vehicle-web-proof/1',runtime:'Pyodide 0.27.7',mode:enabled?'vehicle':'viewport',
       keys:[...keys],pointerLocked:document.pointerLockElement===viewer.canvas,
       state:snapshot.state,input:input(),camera:{position:viewer.camera.position.toArray(),target:viewer.controls.target.toArray()},
-      nodes:nodes.size,links:required.length-25,wheels:config.wheels.length,
-      poses:Object.fromEntries(['hull','turret_yaw','gun_elevation',config.wheels[0].name,config.links.L[0].name,config.links.R[0].name,'commander_hatch'].map(name=>[name,Array.from(nodes.get(name).matrix.elements)]))
+      nodes:nodes.size,links:Object.values(config.links).flat().length,wheels:config.wheels.length,
+      poses:Object.fromEntries([...controlled].map(name=>[name,Array.from(nodes.get(name).matrix.elements)]))
     });
   },error=>{output.textContent=String(error);viewer.canvas.dataset.pythonError=String(error);setMode(false);});
   mode.onclick=()=>setMode(!enabled);reset.onclick=()=>{keys.clear();yaw=0;elevation=0;for(const hatch of hatchButtons)hatch.reset();logic.event('reset');send();};
@@ -71,12 +72,12 @@ export async function installPythonVehicle(viewer,descriptor,modelURL,container)
     if(e.code==='F1'){e.preventDefault();if(!e.repeat&&!enabled)setMode(true);return;}
     if(e.code==='Escape'){if(enabled)e.preventDefault();setMode(false);return;}
     if(!enabled)return;
-    if(['KeyW','KeyA','KeyS','KeyD'].includes(e.code)){e.preventDefault();if(!blocked.has(e.code))keys.add(e.code);send();}
+    if(['KeyW','KeyA','KeyS','KeyD','Space'].includes(e.code)){e.preventDefault();if(!blocked.has(e.code))keys.add(e.code);send();}
     if(e.code==='KeyR'&&!e.repeat){e.preventDefault();reset.click();}
   },{capture:true});
   listen(window,'keyup',e=>{physical.delete(e.code);blocked.delete(e.code);if(keys.delete(e.code))send();});
-  listen(window,'blur',()=>{keys.clear();physical.clear();blocked.clear();rmb=false;send();});
-  listen(document,'visibilitychange',()=>{if(document.hidden){keys.clear();rmb=false;send();}});
+  listen(window,'blur',()=>{physical.clear();blocked.clear();setMode(false);});
+  listen(document,'visibilitychange',()=>{if(document.hidden)setMode(false);});
   listen(viewer.canvas,'pointerdown',e=>{
     if(!enabled)return;
     e.preventDefault();rmb=e.button===2;

@@ -4,7 +4,8 @@
     "profile": "tiger-ii",
     "schema": "atlantis-python-motion/1",
     "module": "../tiger_motion.py",
-    "config": "../tiger_config.json"
+    "config": "../tiger_config.json",
+    "course": "../Course.glb"
   },
   "actions": []
 }

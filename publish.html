@@ -33,12 +33,24 @@ git credential-manager github login --username $galleryUser</code></pre>
       <p><code>atlantis_gallery_prepare</code> creates a local package and lists its files, archive members, checksums and destinations. After you approve that exact public plan, <code>atlantis_gallery_publish</code> uses your GitHub account to publish it. Changed files require a new plan and approval.</p>
       <ul>
         <li>Your public <code>atlantis-&lt;slug&gt;</code> repository hosts preview models, textures and browser motion logic through GitHub Pages.</li>
-        <li>GitHub Releases in that repository host the complete model and motion archive, all final modeling code, and the optional approved work-order JSON.</li>
+        <li>GitHub Releases in that repository host exactly three current downloads: model assets, combined controls, and editable modeling source. An approved work-order JSON is included inside the source archive.</li>
         <li>The main Gallery receives only a catalog entry and a thumbnail of at most 1 MiB. Your work page keeps your creator name, downloads, interactive preview and social links.</li>
       </ul>
       <p>The publisher verifies Pages access, browser CORS and file hashes before submitting the Gallery entry. Pages may need time to deploy; retry the same approved digest to resume without duplicate downloads. Contributors receive a pull request; work appears after maintainers merge it and Gallery Pages deploys. The Gallery owner publishes directly.</p>
       <p>Preview files must each be smaller than 100 MiB, total at most 900 MiB. Each Release download must be smaller than 2 GiB. Optimize oversized previews before publishing.</p>
       <p>The WebGPU viewer's <q>Share To Atlantis Gallery</q> button opens this guide. Publication still requires your reviewed file plan.</p>
+    </section>
+    <section id="three-package-downloads">
+      <h2>Publish three packages and keep updates together</h2>
+      <ol>
+        <li><code>model.zip</code>: final USD/GLB models, referenced layers, textures, materials and other model assets. Preserve the export's relative paths.</li>
+        <li><code>controls.zip</code>: all operation code and dependencies, including simplified game logic and native real-physics adapters when supplied, configuration, launchers, runtime manifests and assembly instructions. Keep the two solvers independent. Do not advertise an adapter that is absent.</li>
+        <li><code>modeling-code.zip</code>: editable modeling code for every part, rebuild inputs and instructions, plus the optional work order approved for public sharing.</li>
+      </ol>
+      <p>Do not add separate simplified-motion, real-physics or work-order download buttons. On an update, rebuild the affected packages and replace the work page's current links. Preserve the work ID, author and social links; old release archives may remain as history.</p>
+      <p>Extract the model and controls packages into the <strong>same dedicated directory</strong>. Extract modeling source separately. Include <code>ASSEMBLE_ISAAC.md</code> and <code>ASSEMBLE_GAME_ENGINE.md</code> in controls; the publisher adds baseline instructions when they are not explicitly supplied. Provide asset-specific commands and <code>isaac-runtimes.json</code> for advertised Isaac adapters.</p>
+      <p>Both Gallery assembly actions must use all three current package links, explain this extraction layout, select the supplied runtime and activate only one controller per instance. Isaac PhysX runs in Isaac Sim. A game-engine work order must adapt host bindings or use that engine's native solver.</p>
+      <p>Use <code>modelFiles</code> for assets, <code>motionFiles</code> and <code>controlFiles</code> for all operation code/configuration, and <code>sourceFiles</code> for editable modeling source. Browser code in <code>previewFiles</code> is also included in controls. The generated package instructions are listed in the reviewed public plan. Static assets still use these three roles; never claim nonexistent behavior.</p>
     </section>
     <details><summary>Existing standalone Gallery MCP installations</summary>
       <p>They remain supported. Run <code>git pull --ff-only</code> inside the existing AtlantisGallery checkout and restart that MCP. Its tools remain <code>prepare_gallery_upload</code> and <code>publish_gallery_asset</code>. New Atlantis users do not need a second MCP or Python environment.</p>
@@ -49,6 +61,7 @@ git credential-manager github login --username $galleryUser</code></pre>
       <p>Declare <code>operableVehicle</code> in every new submission. Set it to <code>true</code> for every vehicle that has operating logic, including bicycles. Visitors must be able to enter operating mode, control the vehicle and return to model inspection on its Gallery work page.</p>
       <p>Use a supported native Gallery vehicle controller or set <code>vehicleEntry</code> to the relative path of a browser-ready HTML controller. Include its scripts, styles, models and other dependencies in <code>previewFiles</code>. Keep camera and keyboard controls usable inside the embedded view. A video, an external launch link or a downloadable engine project alone does not fulfill this requirement.</p>
       <p>Before requesting approval, test the submitted build inside the Gallery work-page frame. Enter operating mode, use the controls supplied by the vehicle (for example pedal, steer and brake), confirm visible motion, and return to inspection. Record the actions and observed results in the review.</p>
+      <p>Simplified ground-vehicle driving defaults to acceleration, coasting, braking and parking hold, stop-before-reverse, contact-based traction, bounded per-wheel spring/damper suspension, terrain pitch/roll, mild hard-brake nose dip that settles, no airborne traction, and landing response. Bind actual wheels, arms and tracks correctly. Use fixed substeps, safe input release and a pure Python core tested in Pyodide. Test start, coast, brake and settling, reverse, steering, slope and one-sided bumps, airborne/landing and 30/60/144 Hz input. Native real physics uses separate solver validation and must not receive duplicate simplified suspension or body integration.</p>
     </section>
     <section>
       <h2>Concurrent submissions</h2>
@@ -80,6 +93,7 @@ git credential-manager github login --username $galleryUser</code></pre>
   "modelFiles": ["cabinet-detail.usd"],
   "interaction": "interaction.json",
   "motionFiles": ["motion/cabinet.py"],
+  "controlFiles": ["ASSEMBLE_ISAAC.md", "ASSEMBLE_GAME_ENGINE.md"],
   "sourceFiles": ["modeling/build_cabinet.py"],
   "workOrder": "work-order.json"
 }</code></pre>

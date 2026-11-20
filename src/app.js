@@ -1,5 +1,6 @@
 import { galleryUrl, loadCatalog, readPage, workUrl } from './catalog.js';
 import { engineOrderButton } from './engine-order.js';
+import { packageInstructions, isVehicle, vehicleDynamics, vehicleAcceptance } from './assembly-packages.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -76,20 +77,21 @@ function isaacPrompt(item) {
     `Assemble ${JSON.stringify(item.title)} in my Isaac Sim workspace.`,
     ...(item.isaacRuntimes ? [
       `Selected runtime: ${$('isaac-runtime').value}.`,
-      'Read ASSEMBLE_ISAAC.md and isaac-runtimes.json in the download first. Use the selected mode entry and its matching USD. Never run both controllers on the same tank.',
-      'Use assemble_isaac.py --mode ' + $('isaac-runtime').value + ' with Isaac Sim python.bat. Keep all controls and instructions in English.',
+      'Read ASSEMBLE_ISAAC.md and isaac-runtimes.json in the combined controls package first. Use the selected mode entry and its matching USD with Isaac Sim python.bat. If an assemble_isaac.py dispatcher is supplied, pass --mode ' + $('isaac-runtime').value + '; otherwise use the manifest entry directly. Never run both controllers on the same tank. Keep operation labels in English.',
     ] : []),
     `Gallery work — ${workUrl(item.id).href}`,
     '',
-    'Use the model and motion downloads for assembly. Use the preview and interaction data as fallbacks.',
+    ...packageInstructions(item),
     ...Array.from(files, ([url, label]) => `- ${label} — ${url}`),
     '',
-    '1. Use the downloaded files in my workspace or fetch them from the links. Extract the package into a dedicated ' +
-      'folder and preserve relative paths. Inspect the USD layers, textures, scripts, and launch instructions.',
+    '1. Use the current model and controls downloads in my workspace or fetch them from the links. Inspect the USD layers, textures, scripts, runtime manifest and launch instructions in the merged directory.',
     '2. Use my installed Isaac Sim version. Prefer the packaged Isaac stage and launcher when available. Add the ' +
       'asset to the destination stage I specify, or create a separate stage for it. Review scripts before running ' +
       'them and bind the controls to the actual USD prims and joints. If the work ships only with interaction ' +
       'data, create a small Isaac adapter for the supported actions.',
+    ...(isVehicle(item) ? [...vehicleDynamics,
+      'Apply the simplified-dynamics checks to game mode. For real-physics mode, use its native contact/joint/solver regression and report the actual physical behavior instead of substituting the game controller.',
+      ...vehicleAcceptance] : []),
     '3. Open the assembled stage in Isaac Sim and test the available controls and observed motion. Report the ' +
       'stage path, launch command, test results, and any missing dependencies or unsupported actions.',
   ].join('\n');
@@ -97,6 +99,9 @@ function isaacPrompt(item) {
 
 function setupIsaacPrompt(item) {
   $('isaac-runtime-choice').hidden = !item.isaacRuntimes;
+  if (item.isaacRuntimes) {
+    $('isaac-runtime').replaceChildren(...item.isaacRuntimes.map(mode => new Option(mode === 'game' ? 'Game (simplified)' : 'Real Physics (Isaac Sim)', mode)));
+  }
   $('assemble-isaac').addEventListener('click', async () => {
     const prompt = isaacPrompt(item);
     const message = $('isaac-prompt-status');

@@ -1,7 +1,7 @@
 {
   "schema": "aps-webgpu-scene/1",
   "coordinates": "metres/Y-up",
-  "title": "Tiger II · 游戏驱动 / Python",
+  "title": "Tiger II · Python driving",
   "assets": [
     {
       "id": "tiger_ii",

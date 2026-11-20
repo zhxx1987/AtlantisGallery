@@ -1,4 +1,5 @@
 import { workUrl } from './catalog.js';
+import { packagePlan, packageInstructions, isVehicle, vehicleDynamics, vehicleAcceptance } from './assembly-packages.js';
 
 const engines = {
   unreal: {
@@ -56,15 +57,22 @@ function makeOrder(item, engineId, spec) {
     engine: engine.name,
     asset: { id: item.id, title: item.title, creator: item.creator, description: item.description, gallery: workUrl(item.id).href },
     sources: sourceList(item, spec),
+    packages: packagePlan(item),
     task: 'Implement the asset and its published interactive behavior in the selected game engine. Work directly in the designated engine project and use its installed version and conventions.',
     implementation: [
+      ...packageInstructions(item),
       'Inspect the model, interaction data and original operation scripts, including the motion files inside the downloads. Identify the inputs, controlled nodes, initial state, limits and timing before porting the behavior.',
       'Preserve scale, coordinate conversion, hierarchy, materials, textures and joint pivots. Convert unsupported source formats as needed and keep the converted assets with the project.',
       engine.implementation,
+      ...(isVehicle(item, spec) ? [
+        'For game-engine assembly, port the published simplified driving core and its parameters to the selected engine. Read ASSEMBLE_GAME_ENGINE.md. Use native physics only when that runtime is explicitly requested and verified in the target engine; Isaac Python scripts are not drop-in Unity, Godot or Unreal controllers.',
+        ...vehicleDynamics,
+      ] : []),
       'Reproduce the behavior described by the source scripts and interaction data using native engine components. For a static prop, deliver the reusable asset and a demonstration scene. Report any missing references or unverified behavior.',
     ],
     acceptance: [
       engine.verify,
+      ...(isVehicle(item, spec) ? vehicleAcceptance : []),
       'Compare the imported appearance and each documented state transition against the source. Check initial pose, movement limits and repeatability where applicable.',
       'Return the engine version, reusable asset and scene paths, script-to-component bindings, controls, test results and a screenshot or short capture from the running scene.',
     ],

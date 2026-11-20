@@ -177,8 +177,15 @@ export class GalleryViewer {
       this.span=Math.max(size.x,size.y,size.z);
       this.originals=[];
       this.vehicleScale=1.35;
+      if(spec.logic.course){
+        this.importUrl=new URL(spec.logic.course,new URL(url,location.href)).href;
+        const course=await fetch(this.importUrl);
+        if(!course.ok)throw Error('Vehicle course HTTP '+course.status);
+        this.importBuffer=await course.arrayBuffer();
+        await this.native.addAsset(this.importUrl);
+      }
       this.effects.setScale(this.span);this.frame();
-      this.vehicle=await installPythonVehicle(this.native,spec.logic,this.importUrl,this.panel);
+      this.vehicle=await installPythonVehicle(this.native,spec.logic,new URL(url,location.href).href,this.panel);
       return {meshes:0,errors:[]};
     } finally {
       this.importUrl=null;this.importBuffer=null;

@@ -167,7 +167,7 @@ class GitHub:
         if social_added:
             paths.append(f'models/{asset_id}/social.json')
         git('add', '--', *paths, cwd=checkout)
-        message = f'Add Gallery work: {title}' if asset_added else f'Add social links for {title}'
+        message = f'Publish Gallery work: {title}' if asset_added else f'Add social links for {title}'
         git('-c', f'user.name={self.login}', '-c', f'user.email={self.email}',
             'commit', '--quiet', '-m', message, cwd=checkout)
         branch = MAIN if owner else branch_prefix + uuid4().hex[:8]
