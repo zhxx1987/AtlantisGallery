@@ -15,7 +15,7 @@
       {
         "kind": "controls",
         "label": "Download Controls (Game + Real Physics)",
-        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/vehicle-packages-v5a-16e3258ba9bd/controls.zip"
+        "url": "https://github.com/zhxx1987/atlantis-t10-heavy-tank/releases/download/shared-render-controls-v1-42661b8a9a6b/controls.zip"
       },
       {
         "kind": "modeling-source",
@@ -99,7 +99,7 @@
       {
         "kind": "controls",
         "label": "Download Controls (Game + Real Physics)",
-        "url": "https://github.com/zhxx1987/AtlantisGallery/releases/download/tiger-ii-suspension-v1-1cd38a3050b8/tiger-ii-controls.zip"
+        "url": "https://github.com/zhxx1987/AtlantisGallery/releases/download/shared-render-controls-v1-cc92b609b6ac/tiger-ii-controls.zip"
       },
       {
         "kind": "modeling-source",
