@@ -99,7 +99,7 @@ git credential-manager github login --username $galleryUser</code></pre>
 }</code></pre>
       <ul>
         <li>List dependencies required by the web preview in <code>previewFiles</code>, with the paths the model expects. Use a browser-ready USD or GLB export.</li>
-        <li>Use <code>modelFiles</code> for additional USD layers and <code>motionFiles</code> for the original motion scripts. These join the model and preview dependencies in the model download.</li>
+        <li>Use <code>modelFiles</code> for additional model assets and USD layers. Use <code>motionFiles</code> and <code>controlFiles</code> for operation scripts, configuration and runtime dependencies in the combined controls download.</li>
         <li>List the final modeling code for every part and its required data in <code>sourceFiles</code>.</li>
         <li>Include <code>workOrder</code> only if you approve the complete JSON for public download. Review it for private information before sharing.</li>
         <li>Provide <code>interaction</code> for browser controls. It maps part paths to joints, buttons, and emit events. The existing microwave uses the shared Python profile. The Tiger II profile loads its pure Python module and motion configuration from explicitly listed preview dependencies. Other new Python profiles require a Gallery adapter. <a href="https://github.com/zhxx1987/AtlantisGallery#work-data">View the interaction format</a>.</li>
