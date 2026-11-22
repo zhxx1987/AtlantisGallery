@@ -1,0 +1,40 @@
+{
+  "id": "aventador-lp700-4-arancio-argos",
+  "title": "Lamborghini Aventador LP 700-4 · Arancio Argos",
+  "creator": "zhxx1987",
+  "description": "A drivable, editable Aventador with metallic orange paint, continuous curved glazing, a detailed PBR cabin and articulated scissor doors.",
+  "vehicleController": {
+    "schema": "atlantis-gallery-vehicle/1",
+    "renderer": "gallery-shared",
+    "thirdPersonCursor": "hidden",
+    "base": "https://zhxx1987.github.io/atlantis-aventador-lp700-4-arancio-argos/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/preview/drive/",
+    "module": "controller.js",
+    "assets": {
+      "course": "Runway.glb"
+    }
+  },
+  "model": "https://zhxx1987.github.io/atlantis-aventador-lp700-4-arancio-argos/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/preview/Aventador.glb",
+  "thumbnail": "./models/aventador-lp700-4-arancio-argos/preview.webp",
+  "downloads": [
+    {
+      "kind": "model",
+      "label": "Download Model",
+      "url": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos/releases/download/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/model.zip"
+    },
+    {
+      "kind": "controls",
+      "label": "Download Controls",
+      "url": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos/releases/download/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/controls.zip"
+    },
+    {
+      "kind": "modeling-source",
+      "label": "Download Modeling Source",
+      "url": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos/releases/download/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/modeling-code.zip"
+    }
+  ],
+  "packageLayout": "model-controls-source/1",
+  "operableVehicle": true,
+  "interaction": "https://zhxx1987.github.io/atlantis-aventador-lp700-4-arancio-argos/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/interaction.json",
+  "assetRepository": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos",
+  "publishedAt": "2026-11-22T10:48:59.153714+00:00"
+}
