@@ -1,0 +1,40 @@
+{
+  "id": "ch53e-super-stallion",
+  "title": "CH-53E Super Stallion",
+  "creator": "zhxx1987",
+  "description": "A detailed CH-53E helicopter model with articulated entry doors and an underbody cargo ramp. Open the flight mode on the Gallery work page to take off from the helipad.",
+  "vehicleController": {
+    "schema": "atlantis-gallery-vehicle/1",
+    "renderer": "gallery-shared",
+    "thirdPersonCursor": "hidden",
+    "base": "https://zhxx1987.github.io/atlantis-ch53e-super-stallion/gallery-4514b6d7794a931581769f709e148affd5df90fe13d35da527757816626ed10a/preview/flight/",
+    "module": "controller.js",
+    "assets": {
+      "helipad": "helipad.glb"
+    }
+  },
+  "model": "https://zhxx1987.github.io/atlantis-ch53e-super-stallion/gallery-4514b6d7794a931581769f709e148affd5df90fe13d35da527757816626ed10a/preview/helicopter.glb",
+  "thumbnail": "./models/ch53e-super-stallion/preview.webp",
+  "downloads": [
+    {
+      "kind": "model",
+      "label": "Download Model",
+      "url": "https://github.com/zhxx1987/atlantis-ch53e-super-stallion/releases/download/gallery-4514b6d7794a931581769f709e148affd5df90fe13d35da527757816626ed10a/model.zip"
+    },
+    {
+      "kind": "controls",
+      "label": "Download Controls",
+      "url": "https://github.com/zhxx1987/atlantis-ch53e-super-stallion/releases/download/gallery-4514b6d7794a931581769f709e148affd5df90fe13d35da527757816626ed10a/controls.zip"
+    },
+    {
+      "kind": "modeling-source",
+      "label": "Download Modeling Source",
+      "url": "https://github.com/zhxx1987/atlantis-ch53e-super-stallion/releases/download/gallery-4514b6d7794a931581769f709e148affd5df90fe13d35da527757816626ed10a/modeling-code.zip"
+    }
+  ],
+  "packageLayout": "model-controls-source/1",
+  "operableVehicle": true,
+  "interaction": "https://zhxx1987.github.io/atlantis-ch53e-super-stallion/gallery-4514b6d7794a931581769f709e148affd5df90fe13d35da527757816626ed10a/interaction.json",
+  "assetRepository": "https://github.com/zhxx1987/atlantis-ch53e-super-stallion",
+  "publishedAt": "2026-11-22T17:32:59.443237+00:00"
+}
