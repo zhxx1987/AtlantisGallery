@@ -7,34 +7,34 @@
     "schema": "atlantis-gallery-vehicle/1",
     "renderer": "gallery-shared",
     "thirdPersonCursor": "hidden",
-    "base": "https://zhxx1987.github.io/atlantis-aventador-lp700-4-arancio-argos/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/preview/drive/",
+    "base": "https://zhxx1987.github.io/atlantis-aventador-lp700-4-arancio-argos/gallery-03296ef26da577131d318f87abf5008a268f0549472dc30f58e24fbc9f713e8c/preview/drive/",
     "module": "controller.js",
     "assets": {
       "course": "Runway.glb"
     }
   },
-  "model": "https://zhxx1987.github.io/atlantis-aventador-lp700-4-arancio-argos/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/preview/Aventador.glb",
+  "model": "https://zhxx1987.github.io/atlantis-aventador-lp700-4-arancio-argos/gallery-03296ef26da577131d318f87abf5008a268f0549472dc30f58e24fbc9f713e8c/preview/Aventador.glb",
   "thumbnail": "./models/aventador-lp700-4-arancio-argos/preview.webp",
   "downloads": [
     {
       "kind": "model",
       "label": "Download Model",
-      "url": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos/releases/download/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/model.zip"
+      "url": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos/releases/download/gallery-03296ef26da577131d318f87abf5008a268f0549472dc30f58e24fbc9f713e8c/model.zip"
     },
     {
       "kind": "controls",
       "label": "Download Controls",
-      "url": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos/releases/download/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/controls.zip"
+      "url": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos/releases/download/gallery-03296ef26da577131d318f87abf5008a268f0549472dc30f58e24fbc9f713e8c/controls.zip"
     },
     {
       "kind": "modeling-source",
       "label": "Download Modeling Source",
-      "url": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos/releases/download/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/modeling-code.zip"
+      "url": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos/releases/download/gallery-03296ef26da577131d318f87abf5008a268f0549472dc30f58e24fbc9f713e8c/modeling-code.zip"
     }
   ],
   "packageLayout": "model-controls-source/1",
   "operableVehicle": true,
-  "interaction": "https://zhxx1987.github.io/atlantis-aventador-lp700-4-arancio-argos/gallery-a9667991fb836e24b4bf7354ab36c506985cd54603c5a25f385870bc0636c415/interaction.json",
+  "interaction": "https://zhxx1987.github.io/atlantis-aventador-lp700-4-arancio-argos/gallery-03296ef26da577131d318f87abf5008a268f0549472dc30f58e24fbc9f713e8c/interaction.json",
   "assetRepository": "https://github.com/zhxx1987/atlantis-aventador-lp700-4-arancio-argos",
   "publishedAt": "2026-11-22T10:48:59.153714+00:00"
 }
