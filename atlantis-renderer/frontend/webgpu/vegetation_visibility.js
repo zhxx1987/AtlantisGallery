@@ -45,7 +45,7 @@ export function prepareVegetationView(systems,scene,pass,seed){
                                                                                 
   if(pass.kind==='depth')return;
   if(!occluding.length||!view.reversed){selectGrass();return;}
-  const depthPass={...pass,kind:'depth',colorViews:[],colorFormats:[],depthView:view.depth.createView(),after:null,betweenLists:null,depthBias:0,depthBiasSlopeScale:0,apsVegetationSeed:true};
+  const depthPass={...pass,kind:'depth',sampleCount:1,colorViews:[],colorFormats:[],depthView:view.depth.createView(),after:null,betweenLists:null,depthBias:0,depthBiasSlopeScale:0,apsVegetationSeed:true};
   const permitted=o=>!pass.filter||pass.filter(o);
   const shared=pass.apsSharedSolidDepth?.getGPU?.()??pass.apsSharedSolidDepth;
   const casters=active.filter(s=>!s.groundcover&&!s.isGrass);

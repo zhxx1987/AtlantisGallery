@@ -14,6 +14,7 @@ import {destroyUniform,releaseAfterSubmit} from './lighting_native.js';
 import {BOUNDED_RADIANCE_WGSL,AERIAL_WGSL, EXPOSURE_WGSL, HIGHLIGHT_WGSL, DOWNSAMPLE_WGSL, blurWGSL,
   DOF_WGSL, COMPOSE_WGSL} from './post_shaders.js';
 
+import {FXAA_WGSL} from './fxaa.js';
 import {ScreenSpaceAO} from './ssao.js';
 import {VolumetricFog} from './volumetric_fog.js';
 
@@ -23,7 +24,8 @@ export class PhysicalCamera {
     this.viewer=viewer;this.lighting=lighting;this.disposed=false;this.frames=0;
     this.options=normalizePostOptions(viewer.options?.postProcessing||{});
     this.width=1;this.height=1;this.diagnosticMode=false;this.evRevision=0;this.evResetRevision=0;this.postTime=0;
-    this.borrowedOptics={camera:viewer.camera,fov:viewer.camera.fov};this.outputPasses=new Map();
+    this.borrowedOptics={camera:viewer.camera,fov:viewer.camera.fov};this.outputPasses=new Map();this.fxaaPasses=new Map();
+    this.fxaaInput=new Texture({label:'APS FXAA display input',format:'rgba8unorm',usage:['sample','render']});
     const rt=(name)=>new Texture({label:'APS physical camera '+name,width:1,height:1,format:'rgba16float',usage:['sample','render']});
     this.aerial=rt('aerial');this.airScatter=rt('existing atmosphere in-scattering');this.shaftScene=rt('occluded atmosphere HDR');this.dof=rt('DOF');
     this.shaftMask=rt('shaft depth visibility');this.shaftOcclusion=rt('shaft blurred visibility');
@@ -67,6 +69,7 @@ export class PhysicalCamera {
     this.shaftExtractPass=new FullscreenPass({label:'APS sun neighbourhood HDR extraction',modules:[this.exposureModule],bindings:{shaftBloomScene:{texture:()=>this.options.depthOfField?this.dof:this.hdrSource}},code:SHAFT_BLOOM_EXTRACT_WGSL});
     this.shaftBloomPasses=this.shaftBloomLevels.map((target,i)=>new FullscreenPass({label:'APS sun radial bloom '+i,modules:[this.postModule],bindings:{shaftBloomInput:{texture:i?this.shaftBloomLevels[i-1]:this.shaftBloomExtract}},code:shaftBloomBlurWGSL(i)}));
     this.composePass=this._outputPass(GPU.format,'srgb');
+    this._prepareFXAA(GPU.format);
     this._applyOptions();this.setSize(viewer.canvas.width||1,viewer.canvas.height||1);
   }
   async init(){await GPU.pipelinesReady();return this;}
@@ -95,6 +98,10 @@ export class PhysicalCamera {
     for(const [a,b] of Object.entries({occlusionDepthRange:'lightShaftOcclusionDepthRange',occlusionMaskDarkness:'lightShaftOcclusionMaskDarkness',shaftBloomScale:'lightShaftBloomScale',shaftBloomThreshold:'lightShaftBloomThreshold',shaftBloomTint:'lightShaftBloomTint'}))u[a].value=o[b];
     u.bloomConeCos.value=Math.cos(o.lightShaftBloomAngularRadius*Math.PI/180);
     u.manualEV.value=cameraEV100(o)-o.exposureCompensation;u.evRevision.value=this.evRevision;u.evResetRevision.value=this.evResetRevision;
+    const scene=this.viewer.sceneRenderer;
+    scene.msaaSamples=o.msaaSamples;
+    scene.bevelOptions=o.shaderBevel&&o.shaderBevelStrength>0
+      ?{radius:o.shaderBevelRadius,strength:o.shaderBevelStrength}:null;
     this._updateLens();
   }
   _updateLens() {
@@ -111,7 +118,8 @@ export class PhysicalCamera {
   }
   setDiagnosticMode(enabled){
     if(typeof enabled!=='boolean')throw new TypeError('Diagnostic mode must be boolean');
-    this.diagnosticMode=enabled;this.params.fields.rawDiagnostic.value=Number(enabled);return this;
+    this.diagnosticMode=enabled;this.viewer.sceneRenderer.diagnostic=enabled;
+    this.params.fields.rawDiagnostic.value=Number(enabled);return this;
   }
   _outputPass(format,transfer){
     const key=format+':'+transfer;
@@ -127,8 +135,22 @@ export class PhysicalCamera {
   }
                                                                                 
                                                                                  
+  _prepareFXAA(format){
+    if(!this.options.fxaa||!['rgba8unorm','bgra8unorm'].includes(format))return null;
+    if(!this.fxaaPasses.has(format)){
+      this.fxaaPasses.set(format,new FullscreenPass({label:'APS FXAA',colorFormats:[format],
+        bindings:{fxaaInput:{texture:this.fxaaInput},
+          fxaaDepth:{texture:()=>this.viewer.sceneRenderer.sceneRT.depthTexture},
+          fxaaMotion:{texture:()=>this.viewer.sceneRenderer.velocityTexture}},code:FXAA_WGSL}));
+    }
+    this._outputPass(this.fxaaInput.format,'srgb');
+    return this.fxaaPasses.get(format);
+  }
   async prepareDestination(destination){
     const d=destination||{};this._outputPass(d.format??d.texture?.format??GPU.format,d.transfer??(destination?'linear':'srgb'));
+    if(!d.viewport&&!d.scissor&&(d.transfer??(destination?'linear':'srgb'))==='srgb'){
+      this._prepareFXAA(d.format??d.texture?.format??GPU.format);
+    }
     await GPU.pipelinesReady();return this;
   }
   _writeOutput(destination){
@@ -136,12 +158,19 @@ export class PhysicalCamera {
     const transfer=d.transfer??(destination?'linear':'srgb');
     if(!['linear','srgb'].includes(transfer))throw new TypeError('Output transfer must be linear or srgb');
     if(transfer==='linear'&&format.endsWith('-srgb'))throw new TypeError('Linear output needs a non-sRGB attachment');
-    const pass=this._outputPass(format,transfer);
+    let pass=this._outputPass(format,transfer);
     let view=d.view;
     if(!view&&d.texture)view=d.texture.isTexture?d.texture.view({dimension:'2d',baseMipLevel:d.mip??0,mipLevelCount:1,baseArrayLayer:d.face??0,arrayLayerCount:1}):d.texture.createView({dimension:'2d',baseMipLevel:d.mip??0,mipLevelCount:1,baseArrayLayer:d.face??0,arrayLayerCount:1});
     if(!view){if(destination)throw new TypeError('Destination needs a texture or view');if(!GPU.context)throw new Error('Missing WebGPU canvas context');view=GPU.context.getCurrentTexture().createView();}
     if(d.viewport&&(!(d.viewport.length===6)||!d.viewport.every(Number.isFinite)||d.viewport[0]<0||d.viewport[1]<0||d.viewport[2]<=0||d.viewport[3]<=0||d.viewport[4]<0||d.viewport[5]>1||d.viewport[4]>d.viewport[5]))throw new RangeError('Invalid native viewport [x,y,width,height,minDepth,maxDepth]');
     if(d.scissor&&(!(d.scissor.length===4)||!d.scissor.every(x=>Number.isInteger(x)&&x>=0)))throw new RangeError('Invalid native scissor [x,y,width,height]');
+    const fxaa=transfer==='srgb'&&!this.diagnosticMode&&!d.viewport&&!d.scissor
+      ?this._prepareFXAA(format):null;
+    if(fxaa){
+      this.fxaaInput.resize(d.width??d.texture?.width??this.width,d.height??d.texture?.height??this.height);
+      this._outputPass(this.fxaaInput.format,'srgb').render({colorViews:[this.fxaaInput],clear:[0,0,0,0]});
+      pass=fxaa;
+    }
     const rp=GPU.getEncoder().beginRenderPass({label:'APS destination',colorAttachments:[{view,loadOp:d.clear?'clear':'load',storeOp:'store',clearValue:d.clear??[0,0,0,0]}]});
     try{if(d.viewport)rp.setViewport(...d.viewport);if(d.scissor)rp.setScissorRect(...d.scissor);pass.draw(rp);}finally{rp.end();}
   }
@@ -182,6 +211,9 @@ export class PhysicalCamera {
   get depthTexture(){return this.viewer.sceneRenderer.sceneRT.depthTexture;}
   get hdrSource(){return this.occlusionActive?this.shaftScene:this.aerial;}
   metadata(){return {diagnostic:this.diagnosticMode,backend:'webgpu',options:this.options,frames:this.frames,size:[this.width,this.height],
+    antialiasing:{fxaa:this.options.fxaa&&!this.diagnosticMode,msaa:this.options.msaaSamples,
+      msaaCoverage:'opaque',fxaaCoverage:'scene objects and edges'},
+    shaderBevel:{enabled:this.options.shaderBevel&&!this.diagnosticMode,radius_m:this.options.shaderBevelRadius,strength:this.options.shaderBevelStrength},
     ssao:this.ssao.metadata(),fog:{enabled:this.options.fog,method:'analytic height extinction + shadowed solar single scattering',composition:'after atmosphere, before exposure; underwater bypass',color:'linear unexposed HDR ambient source',volumetric_shadows:this.options.fogVolumetric&&this.options.fogShadows,volume:this.fogVolume.metadata()},
     exposure:{method:'GPU 64x64 center-weighted four-subsample finite logarithmic meter + temporal EV adaptation',auto:this.options.autoExposure,manualEV:cameraEV100(this.options),
       manualExposure:exposureFromEV(cameraEV100(this.options)-this.options.exposureCompensation,this.options.radianceScale),gpu_state:'EV/exposure held on GPU; no synchronous frame readback'},
@@ -196,7 +228,8 @@ export class PhysicalCamera {
     if(this.viewer.sceneRenderer.onAfterOpaque===this.opaqueHook)this.viewer.sceneRenderer.onAfterOpaque=this.previousOpaqueHook;this.ssao.dispose();this.fogVolume.dispose();
     const {camera,fov}=this.borrowedOptics;camera.fov=fov;camera.updateProjectionMatrix();this.viewer.cameraRevision=(this.viewer.cameraRevision||0)+1;
     releaseAfterSubmit(()=>{
-      for(const t of [this.aerial,this.airScatter,this.shaftScene,this.dof,this.shaftMask,this.shaftOcclusion,this.shaftBloomExtract,...this.shaftBloomLevels,...this.bloomLevels.flatMap(b=>Object.values(b))])t.destroy();
+      this.viewer.sceneRenderer.disposeSurfaceEffects();
+      for(const t of [this.fxaaInput,this.aerial,this.airScatter,this.shaftScene,this.dof,this.shaftMask,this.shaftOcclusion,this.shaftBloomExtract,...this.shaftBloomLevels,...this.bloomLevels.flatMap(b=>Object.values(b))])t.destroy();
     this.exposureState.destroy();destroyUniform(this.params);
     this.underwater?.dispose();
     });

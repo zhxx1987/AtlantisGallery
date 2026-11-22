@@ -1,3 +1,4 @@
+import { mountGalleryRendererControls } from './gallery-controls.js';
 import { galleryUrl, loadCatalog, readPage, workUrl } from './catalog.js';
 import { engineOrderButton } from './engine-order.js';
 import { packageInstructions, isVehicle, vehicleDynamics, vehicleAcceptance } from './assembly-packages.js';
@@ -127,7 +128,7 @@ async function loadInteraction(url) {
   return response.json();
 }
 
-function setupViewer(viewer) {
+function setupViewer(viewer, environmentControls) {
   for (const id of actionIds) $(id).addEventListener('click', () => viewer[id]());
   fileInput.addEventListener('change', async () => {
     const file = fileInput.files?.[0];
@@ -139,6 +140,7 @@ function setupViewer(viewer) {
     loading.textContent = 'Loading local model…';
     try {
       const result = await viewer.load(url, {}, file.name);
+      environmentControls.sync();
       showDetails({ title: file.name, creator: 'Local Preview' });
       shareButton.hidden = true;
       $('share-status').hidden = true;
@@ -195,7 +197,11 @@ async function showWork() {
     const { GalleryViewer } = await import('./viewer.js');
     const viewer = new GalleryViewer($('stage'), controls);
     await viewer.init();
-    setupViewer(viewer);
+    const environmentControls = mountGalleryRendererControls(
+      viewer.native, $('environment-controls'), $('environment-status'),
+    );
+    $('rendering-panel').hidden = false;
+    setupViewer(viewer, environmentControls);
     loading.textContent = 'Loading model…';
     let spec = {};
     let interactionWarning;
@@ -208,6 +214,7 @@ async function showWork() {
     try {
       if(item.vehicleController)spec.vehicle=item.vehicleController;
       const result = await viewer.load(item.model, spec);
+      environmentControls.sync();
       window.galleryViewer=viewer;
       setModelActions(result);
       const issues = [interactionWarning, ...result.errors].filter(Boolean);

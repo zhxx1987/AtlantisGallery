@@ -317,10 +317,15 @@ ${rockSurface.schema==='aps-rock-lygia/1'&&rockSurface.debug!=='pbr'?`m.emission
   if(rockSurface)module.code+='\n'+createRockSurfaceWGSL(rockSurface);
   if(rockLayers)module.deps.push(rockLayers.module);
   // Gallery SSR uses the spare, otherwise unused velocity attachment for opaque surface data.
-  const output=unlit?'r.color=vec4f(s.albedo,s.alpha);':`r.color=vec4f(${impostorLocal?'apsShadeImpostorDetail(apsMeshMaterial,s,in.P,in.pixel)':native?'apsShadeNative(s,in.P,in.V,in.pixel,apsMeshTangent)':'apsShadePrincipled(apsMeshMaterial,s,in.P,in.V,in.pixel,apsMeshTangent)'},s.alpha);
+  const output=unlit?'r.color=vec4f(s.albedo,s.alpha);':`
+#if APS_SHADER_BEVEL
+apsMeshMaterial.normal=s.normal;
+apsMeshMaterial.clearcoatNormal=s.clearcoatNormal;
+#endif
+r.color=vec4f(${impostorLocal?'apsShadeImpostorDetail(apsMeshMaterial,s,in.P,in.pixel)':native?'apsShadeNative(s,in.P,in.V,in.pixel,apsMeshTangent)':'apsShadePrincipled(apsMeshMaterial,s,in.P,in.V,in.pixel,apsMeshTangent)'},s.alpha);
     let galleryViewNormal=normalize((frame.view*vec4f(apsMeshMaterial.normal,0.0)).xyz);
     r.velocity=vec4f(galleryViewNormal*(1.0+apsMeshMaterial.roughness),.04+.96*apsMeshMaterial.metallic);`;
-  const material=new Material({name:definition.name??'glTF material',modules:[module],attributes,varyings,vertex:vertex.join('\n'),surface:surface.join('\n'),output,bindings,uniforms:{...parameters,...program.floatUniforms},lit:false,color:base.slice(0,3),opacity:base[3],roughness,metalness:metallic,emissive:emission.map(v=>v*strength),vertexColors:true,side:definition.doubleSided?'double':mirrored?'back':'front',transparent:alphaMode==='BLEND',alphaTest:alphaMode==='MASK'?alphaCutoff:0,depthWrite:alphaMode!=='BLEND',topology,receiveShadows:true,defines:{APS_HAS_NORMAL:hasNormal?1:0,APS_HAS_TANGENT:hasTangent?1:0,APS_DOUBLE_SIDED:definition.doubleSided?1:0,APS_MIRRORED:mirrored?1:0,APS_IMPOSTOR_LOCAL:impostorLocal?1:0},userData:{...extra,material_id:materialId,sourceMaterial:definition,normalFrame,materialAdapter:'aps-native-webgpu/1',dfg:lighting===principledLightingModule?'preintegrated-64x64-512-samples':'provided-module'}});
+  const material=new Material({name:definition.name??'glTF material',modules:[module],attributes,varyings,vertex:vertex.join('\n'),surface:surface.join('\n'),output,bindings,uniforms:{...parameters,...program.floatUniforms},lit:false,color:base.slice(0,3),opacity:base[3],roughness,metalness:metallic,emissive:emission.map(v=>v*strength),vertexColors:true,side:definition.doubleSided?'double':mirrored?'back':'front',transparent:alphaMode==='BLEND',alphaTest:alphaMode==='MASK'?alphaCutoff:0,depthWrite:alphaMode!=='BLEND',topology,receiveShadows:true,defines:{APS_HAS_NORMAL:hasNormal?1:0,APS_HAS_TANGENT:hasTangent?1:0,APS_DOUBLE_SIDED:definition.doubleSided?1:0,APS_MIRRORED:mirrored?1:0,APS_IMPOSTOR_LOCAL:impostorLocal?1:0,APS_MESH_PBR:unlit||impostorLocal?0:1},userData:{...extra,material_id:materialId,sourceMaterial:definition,normalFrame,materialAdapter:'aps-native-webgpu/1',dfg:lighting===principledLightingModule?'preintegrated-64x64-512-samples':'provided-module'}});
   const drySurface=material.surface,baseDeps=[...module.deps];
   material.setOceanReceiver=function(receiver){
     receiver=receiver??null;if((material.oceanReceiver??null)===receiver)return;material.oceanReceiver=receiver;
@@ -487,13 +492,18 @@ export function createMeshModelMaterial(entries,{hasNormal=true,hasTangent=false
   if(paletteBuffer)bindings.apsModelMaterialPalette={storage:paletteBuffer,access:'read',visibility:'vertex'};
   if(instanceIdBuffer)bindings.apsStaticInstanceIds={storage:instanceIdBuffer,access:'read',visibility:'vertex'};
   for(const binding of Object.values(materialTextures)){bindings[binding.name]={texture:binding.texture};bindings[binding.samplerName]={sampler:binding.sampler};}
-  const output='r.color=vec4f(apsShadePrincipled(apsMeshMaterial,s,in.P,in.V,in.pixel,apsMeshTangent),s.alpha);';
+  const output=`
+#if APS_SHADER_BEVEL
+apsMeshMaterial.normal=s.normal;
+apsMeshMaterial.clearcoatNormal=s.clearcoatNormal;
+#endif
+r.color=vec4f(apsShadePrincipled(apsMeshMaterial,s,in.P,in.V,in.pixel,apsMeshTangent),s.alpha);`;
   const material=new Material({name:entries.length===1?`Merged ${first.name??entries[0].materialId}`:`Merged model (${entries.length} materials)`,
     modules:[module],attributes,varyings,vertex:vertex.join('\n'),surface:surface.join('\n'),output,bindings,uniforms:recipeUniforms,lit:false,
     color:firstBase.slice(0,3),opacity:firstBase[3],roughness:scalar(firstPbr.roughnessFactor??1,'roughnessFactor'),metalness:scalar(firstPbr.metallicFactor??1,'metallicFactor'),
     emissive:firstEmission.map(v=>v*firstStrength),vertexColors:true,side:doubleSided?'double':mirrored?'back':'front',
     transparent:false,alphaTest:0,depthWrite:true,topology,receiveShadows:true,
-    defines:{APS_HAS_NORMAL:hasNormal?1:0,APS_HAS_TANGENT:hasTangent?1:0,APS_DOUBLE_SIDED:doubleSided?1:0,APS_MIRRORED:mirrored?1:0},
+    defines:{APS_HAS_NORMAL:hasNormal?1:0,APS_HAS_TANGENT:hasTangent?1:0,APS_DOUBLE_SIDED:doubleSided?1:0,APS_MIRRORED:mirrored?1:0,APS_MESH_PBR:1},
     userData:{material_id:null,material_ids:entries.map(entry=>entry.materialId),sourceMaterials:entries.map(entry=>entry.definition),
       materialAdapter:'aps-native-webgpu/1',aps_material_dispatch:true,texture_bindings:0,
       dfg:lighting===principledLightingModule?'preintegrated-64x64-512-samples':'provided-module'}});

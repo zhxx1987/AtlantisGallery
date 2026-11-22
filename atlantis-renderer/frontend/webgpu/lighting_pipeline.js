@@ -54,6 +54,7 @@ export function installDFGLookup(renderer,dfgModule) {
     const desc={label:material.name+' '+pass.kind,layout,
       vertex:{module,entryPoint:'vs',buffers:vl.buffers.map(b=>b.layout)},
       primitive:{topology:material.topology,cullMode:pass.cullOverride||(side==='double'?'none':side==='back'?'front':'back'),frontFace:pass.flipWinding?'cw':'ccw'}};
+    if(pass.sampleCount>1)desc.multisample={count:pass.sampleCount};
     if(src.hasFragment)desc.fragment={module,entryPoint:'fs',targets};
     if(pass.depthFormat)desc.depthStencil={format:pass.depthFormat,depthWriteEnabled:pass.depthWriteOverride??material.depthWrite,
       depthCompare:pass.depthCompareOverride??(material.depthTest?(material.depthCompare||pass.depthCompare):'always'),

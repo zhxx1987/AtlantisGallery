@@ -2,6 +2,8 @@ import { GPU } from '../gpu/GPU.js';
 import { RenderTarget } from '../gpu/Texture.js';
 import { Material } from './Material.js';
 import { FullscreenPass } from './FullscreenPass.js';
+import { OpaqueAntialiasing } from './OpaqueAntialiasing.js';
+import { ShaderBevel } from './ShaderBevel.js';
 import { Mesh } from '../scene/Mesh.js';
 import { Scene } from '../scene/Scene.js';
 import { Frustum, Matrix4, Sphere, Vector3 } from '../math/index.js';
@@ -61,6 +63,7 @@ export class SceneRenderer {
 		this.clearColor = [ 0, 0, 0, 1 ];
 		this.onBeforeWater = null;
 		this.onAfterOpaque = null;
+		this.msaaSamples = 1;
 
 	}
 
@@ -115,6 +118,15 @@ export class SceneRenderer {
 
 	}
 
+	disposeSurfaceEffects() {
+
+		this.opaqueAA?.dispose();
+		this.shaderBevel?.dispose();
+		this.opaqueAA = null;
+		this.shaderBevel = null;
+
+	}
+
 	render() {
 
 		const { scene, camera, meshRenderer: mr } = this;
@@ -122,12 +134,24 @@ export class SceneRenderer {
 		const views = rt.textures.map( ( t ) => t.view() );
 		const common = { camera, colorViews: views, colorFormats: rt.formats, depthView: rt.depthTexture.view(), depthTexture: rt.depthTexture, depthFormat: DEPTH_FORMAT, kind: 'main' };
 
-		                          
-		mr.render( scene, {
+		// 1. Opaque geometry can be multisampled. Resolve over the single-sample background.
+		const msaa = this.msaaSamples === 4 && ! this.diagnostic;
+		const background = this.background ? ( rp ) => this.background.draw( rp ) : null;
+		let opaque = {
 			...common, label: 'opaque', layerMask: 1 << LAYERS.OPAQUE,
 			clearColors: [ this.clearColor, [ 0, 0, 0, 0 ], [ 0, 0, 0, 0 ] ], clearDepth: 0,
-			after: this.background ? ( rp ) => this.background.draw( rp ) : null,
-		} );
+			after: msaa ? null : background,
+		};
+		if ( this.bevelOptions && ! this.diagnostic ) {
+			this.shaderBevel ??= new ShaderBevel( DEPTH_FORMAT );
+			opaque.bevelModule = this.shaderBevel.prepare( mr, scene, opaque, rt.width, rt.height, this.bevelOptions );
+		}
+		if ( msaa ) {
+			this.opaqueAA ??= new OpaqueAntialiasing( rt.formats, DEPTH_FORMAT );
+			opaque = this.opaqueAA.opaquePass( opaque, rt );
+		}
+		mr.render( scene, opaque );
+		if ( msaa ) this.opaqueAA.resolveScene( rt, background, opaque.clearColors );
 
 		if ( this.onAfterOpaque ) this.onAfterOpaque();
 

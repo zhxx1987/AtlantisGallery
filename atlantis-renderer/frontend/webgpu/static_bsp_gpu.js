@@ -152,21 +152,22 @@ export class StaticBSPGPU {
   const common={...pass,items:undefined,clearColors:null,clearDepth:null,after:null,apsStaticView:view,apsStaticSourceLists:sources};
   const summaryStart=this.renderer.passSummary?.frame===GPU.frame?this.renderer.passSummary.passes.length:0;
   draw({...pass,items:undefined,apsStaticSourceLists:sources,after:null,apsStaticStage:'landscape',filter:o=>permitted(o)&&terrain(o)});
-  const terrainDepth=this.pyramid(view,'terrain',width,height,pass.depthView);
+  const visibilityDepth=()=>pass.resolveVisibilityDepth?.().view()??pass.depthView;
+  const terrainDepth=this.pyramid(view,'terrain',width,height,visibilityDepth());
   if(!view.selfDepth||view.selfWidth!==width||view.selfHeight!==height){
    if(view.selfDepth){const old=view.selfDepth;this.retire(()=>old.destroy());}
    view.selfDepth=GPU.device.createTexture({label:'ordinary static mesh BSP depth only',size:[width,height],format:'depth32float',usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.TEXTURE_BINDING});view.selfDepthView=view.selfDepth.createView();view.selfWidth=width;view.selfHeight=height;
   }
                                                                                
                                                                               
-  draw({...common,label:pass.label+' static BSP source depth',kind:'depth',apsVegetationSeed:true,colorViews:[],colorFormats:[],depthView:view.selfDepthView,clearDepth:0,apsStaticStage:'self-seed',filter:o=>permitted(o)&&mesh(o)});
+  draw({...common,label:pass.label+' static BSP source depth',kind:'depth',sampleCount:1,apsVegetationSeed:true,colorViews:[],colorFormats:[],depthView:view.selfDepthView,clearDepth:0,apsStaticStage:'self-seed',filter:o=>permitted(o)&&mesh(o)});
   const selfDepth=this.pyramid(view,'self',width,height,view.selfDepthView);
   draw({...common,label:pass.label+' static BSP + terrain',apsStaticStage:'mesh',apsStaticTerrain:terrainDepth,apsStaticSelf:selfDepth,filter:o=>permitted(o)&&mesh(o)});
   const materialBatch=this.renderer.materialBatch.metadata();
-  const solidDepth=this.pyramid(view,'solid',width,height,pass.depthView);
+  const solidDepth=this.pyramid(view,'solid',width,height,visibilityDepth());
   draw({...common,label:pass.label+' static instances',apsStaticStage:'instances',apsStaticOcclusion:{terrain:terrainDepth,solid:solidDepth,width,height},filter:o=>permitted(o)&&instances(o)});
   const instanceVisibility=this.renderer.visibilityFrame;
-  draw({...common,apsSharedSolidDepth:pass.depthTexture??null,label:pass.label+' remaining',after:pass.after,apsStaticStage:'remaining',apsStaticOriginalFilter:pass.filter,filter:o=>permitted(o)&&!terrain(o)&&!mesh(o)&&!instances(o)});
+  draw({...common,apsSharedSolidDepth:pass.resolveVisibilityDepth?.()??pass.depthTexture??null,label:pass.label+' remaining',after:pass.after,apsStaticStage:'remaining',apsStaticOriginalFilter:pass.filter,filter:o=>permitted(o)&&!terrain(o)&&!mesh(o)&&!instances(o)});
   this.renderer.visibilityFrame=instanceVisibility;
   const totals={indexed_calls:0,instanced_indexed_calls:0,nonindexed_calls:0,instances:0,max_instance_count:0,indirect_calls:0};
   for(const p of this.renderer.passSummary?.passes.slice(summaryStart)??[])for(const k of Object.keys(totals))totals[k]=k==='max_instance_count'?Math.max(totals[k],p.gpu_api[k]):totals[k]+p.gpu_api[k];

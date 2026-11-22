@@ -341,6 +341,11 @@ struct FragOut {
 #if ALPHA_TEST
 	if ( s.alpha < mat.alphaTest ) { discard; }
 #endif
+#if APS_SHADER_BEVEL
+	let bevel = bevelNormal( in.pixel, in.P, in.N );
+	s.normal += bevel;
+	s.clearcoatNormal += bevel;
+#endif
 	s.normal = normalize( s.normal );
 	s.clearcoatNormal = normalize( s.clearcoatNormal );
 	var r: FragResult;
@@ -369,7 +374,8 @@ struct FragOut {
 #else
 	let a = select( 1.0, r.color.a, TRANSPARENT_F ) * VELOCITY_WEIGHT;
 #endif
-	out.velocity = vec4f( r.velocity.xy * a, 0.0, a );
+	// Z tracks foreground coverage independently of motion-vector weight.
+	out.velocity = vec4f( r.velocity.xy * a, select( 1.0, r.color.a, TRANSPARENT_F ), a );
 #else
 	out.velocity = r.velocity;
 #endif
@@ -399,6 +405,9 @@ struct FragOut {
 	                                                                                                    
 	if ( material.lightingHooks === false && ! collectModules( material.modules ).includes( lightingModule ) ) modules = [ commonModule, surfaceModule, shadowModule, ...material.modules ];
 
+	defs.APS_SHADER_BEVEL = kind === 'main' && !pass.late && has.has( 'normal' )
+		&& ( material.lit || defs.APS_MESH_PBR ) && pass.bevelModule ? 1 : 0;
+	if ( defs.APS_SHADER_BEVEL ) modules.push( pass.bevelModule );
 	const bindings = { mat: { uniform: material.uniformBlock }, ...material.bindings };
 	if ( pass.apsPointShadow ) {
 		if ( ! pass.pointShadowNeutral ) throw new Error( 'Point caster requires a separate neutral depth texture' );

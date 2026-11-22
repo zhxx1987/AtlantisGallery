@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f5f5ed">
   <title>Work Details · Atlantis Gallery</title>
-  <link rel="stylesheet" href="./style.css?release=engine-orders">
+  <link rel="stylesheet" href="./style.css?release=shared-rendering-20261122">
   <script type="importmap">
     {"imports": {
       "three": "./src/three/build/three.module.js",
@@ -16,6 +16,20 @@
       "./src/viewer.js": "./src/viewer.js?release=vehicle-suspension-20261120",
       "./src/vehicle.js": "./src/vehicle.js?release=vehicle-suspension-20261120",
       "./atlantis-renderer/frontend/webgpu/viewer.js": "./atlantis-renderer/frontend/webgpu/viewer.js?release=2k-shadows",
+      "./atlantis-renderer/frontend/webgpu/fxaa.js": "./atlantis-renderer/frontend/webgpu/fxaa.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/frontend/webgpu/lighting_pipeline.js": "./atlantis-renderer/frontend/webgpu/lighting_pipeline.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/frontend/webgpu/mesh_material.js": "./atlantis-renderer/frontend/webgpu/mesh_material.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/frontend/webgpu/post.js": "./atlantis-renderer/frontend/webgpu/post.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/frontend/webgpu/post_options.js": "./atlantis-renderer/frontend/webgpu/post_options.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/frontend/webgpu/renderer_controls.js": "./atlantis-renderer/frontend/webgpu/renderer_controls.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/frontend/webgpu/static_bsp_gpu.js": "./atlantis-renderer/frontend/webgpu/static_bsp_gpu.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/frontend/webgpu/vegetation_visibility.js": "./atlantis-renderer/frontend/webgpu/vegetation_visibility.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/vendor/tidewater/src/engine/render/MeshRenderer.js": "./atlantis-renderer/vendor/tidewater/src/engine/render/MeshRenderer.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/vendor/tidewater/src/engine/render/MeshShader.js": "./atlantis-renderer/vendor/tidewater/src/engine/render/MeshShader.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/vendor/tidewater/src/engine/render/OpaqueAntialiasing.js": "./atlantis-renderer/vendor/tidewater/src/engine/render/OpaqueAntialiasing.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/vendor/tidewater/src/engine/render/SceneRenderer.js": "./atlantis-renderer/vendor/tidewater/src/engine/render/SceneRenderer.js?release=shared-rendering-20261122",
+      "./atlantis-renderer/vendor/tidewater/src/engine/render/ShaderBevel.js": "./atlantis-renderer/vendor/tidewater/src/engine/render/ShaderBevel.js?release=shared-rendering-20261122",
+      "./src/view-effects.js": "./src/view-effects.js?release=shared-rendering-20261122",
       "./atlantis-renderer/frontend/webgpu/ocean.js": "./atlantis-renderer/frontend/webgpu/ocean.js?release=storage-limits-20261119",
       "./atlantis-renderer/frontend/webgpu/navigation.js": "./atlantis-renderer/frontend/webgpu/navigation.js?release=tiger-dual-20261119"
     }}
@@ -73,6 +87,11 @@
             <h2>Model Controls</h2>
             <div id="controls"></div>
           </section>
+          <details class="detail-panel" id="rendering-panel" hidden>
+            <summary>Rendering</summary>
+            <div id="environment-controls"></div>
+            <p id="environment-status" role="status"></p>
+          </details>
           <section class="detail-panel">
             <h2>Downloads</h2>
             <div id="downloads"></div>
@@ -92,6 +111,6 @@
       </div>
     </article>
   </main>
-  <script type="module" src="./src/app.js?release=shared-vehicle-renderer-20261120"></script>
+  <script type="module" src="./src/app.js?release=shared-rendering-20261122"></script>
 </body>
 </html>

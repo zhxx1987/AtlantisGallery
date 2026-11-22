@@ -140,3 +140,18 @@ h1 { margin: 0; font-size: clamp(32px, 4vw, 56px); line-height: 1.14; letter-spa
   .card-body h2 { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { .card { transition: none; } }
+
+#rendering-panel summary { cursor: pointer; color: var(--green); font-weight: 650; }
+#environment-controls { display: grid; gap: 8px; margin-top: 12px; font-size: 13px; }
+#environment-controls details { border-top: 1px solid var(--line); padding-top: 7px; }
+#environment-controls .control-note:empty, #environment-status:empty { display: none; }
+#environment-controls .control-row { display: grid; grid-template-columns: 1fr minmax(0, 44%); gap: 8px; align-items: center; margin: 8px 0; }
+#environment-controls .vector-row { grid-template-columns: 1fr; }
+#environment-controls .vector-values { display: flex; gap: 6px; }
+#environment-controls .vector-values > div { flex: 1; min-width: 0; }
+#environment-controls input, #environment-controls select { min-width: 0; max-width: 100%; font: inherit; accent-color: var(--green); }
+#environment-controls input[type="number"], #environment-controls select {
+  width: 100%; padding: 4px; border: 1px solid var(--line); background: white; color: var(--green);
+}
+#environment-controls input[type="range"] { display: block; width: 100%; margin: 4px 0 0; }
+#environment-controls input[type="checkbox"] { justify-self: end; }

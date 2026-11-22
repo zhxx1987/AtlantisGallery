@@ -387,6 +387,7 @@ export class MeshRenderer {
 			vertex: { module, entryPoint: 'vs', buffers: vl.buffers.map( ( b ) => b.layout ) },
 			primitive: { topology: material.topology, cullMode, frontFace: pass.flipWinding ? 'cw' : 'ccw' },
 		};
+		if ( pass.sampleCount > 1 ) desc.multisample = { count: pass.sampleCount };
 		if ( src.hasFragment ) desc.fragment = { module, entryPoint: 'fs', targets };
 		if ( pass.depthFormat ) desc.depthStencil = {
 			format: pass.depthFormat,
@@ -510,6 +511,8 @@ export class MeshRenderer {
 			frameBlock: FrameUniforms, layerMask: 0xffffffff, ...pass,
 		};
 		pass.passKey = `${ pass.kind }.${ pass.late ? 1 : 0 }.${ pass.colorFormats.join( ',' ) }.${ pass.depthFormat }.${ pass.depthCompare }.${ pass.cullOverride || '' }.${ pass.defines ? JSON.stringify( pass.defines ) : '' }`;
+		if ( pass.sampleCount > 1 ) pass.passKey += `|msaa:${ pass.sampleCount }`;
+		if ( pass.kind === 'main' && pass.bevelModule ) pass.passKey += '|shader-bevel';
 		if ( pass.flipWinding ) pass.passKey += '|reflected-winding';
 		                                                                   
 		                                                           

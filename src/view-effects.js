@@ -70,37 +70,10 @@ fn fragment(in: FSIn) -> vec4f {
 }
 `;
 
-const fxaaCode = /* wgsl */ `
-fn luma(c: vec3f) -> f32 { return dot(c, vec3f(.299,.587,.114)); }
-fn sampleColor(uv: vec2f) -> vec3f {
-  return textureSampleLevel(galleryLdr, smpLinearClamp, uv, 0.0).rgb;
-}
-fn fragment(in: FSIn) -> vec4f {
-  let px = 1.0 / vec2f(textureDimensions(galleryLdr));
-  let center = sampleColor(in.uv);
-  let m = luma(center);
-  let nw = luma(sampleColor(in.uv + vec2f(-1.0, -1.0) * px));
-  let ne = luma(sampleColor(in.uv + vec2f(1.0, -1.0) * px));
-  let sw = luma(sampleColor(in.uv + vec2f(-1.0, 1.0) * px));
-  let se = luma(sampleColor(in.uv + vec2f(1.0, 1.0) * px));
-  let darkest = min(m, min(min(nw, ne), min(sw, se)));
-  let brightest = max(m, max(max(nw, ne), max(sw, se)));
-  if (brightest - darkest < max(.0312, brightest * .125)) { return vec4f(center, 1.0); }
-  let dir = vec2f(sw + se - nw - ne, nw + sw - ne - se);
-  let reduce = max((nw + ne + sw + se) * .03125, .0078125);
-  let axis = clamp(dir / (min(abs(dir.x), abs(dir.y)) + reduce), vec2f(-8.0), vec2f(8.0)) * px;
-  let inner = .5 * (sampleColor(in.uv - axis / 6.0) + sampleColor(in.uv + axis / 6.0));
-  let outer = .5 * inner + .25 * (sampleColor(in.uv - axis * .5) + sampleColor(in.uv + axis * .5));
-  let luminance = luma(outer);
-  return vec4f(select(outer, inner, luminance < darkest || luminance > brightest), 1.0);
-}
-`;
-
 export async function installGalleryEffects(viewer) {
   const scene = viewer.sceneRenderer;
   const camera = viewer.renderPipeline;
   const reflections = new Texture({ label: 'Gallery SSR HDR', format: 'rgba16float', usage: ['render', 'copySrc'] });
-  const display = new Texture({ label: 'Gallery FXAA input', format: 'rgba8unorm', usage: ['sample', 'render'] });
   const settings = new UniformBlock('GalleryReflectionSettings', { scale: ['f32', 1] });
   const ssr = new FullscreenPass({
     label: 'Gallery screen-space reflections',
@@ -112,15 +85,6 @@ export async function installGalleryEffects(viewer) {
     },
     code: ssrCode,
   });
-  const aa = new FullscreenPass({
-    label: 'Gallery FXAA',
-    colorFormats: [GPU.format],
-    bindings: { galleryLdr: { texture: display } },
-    code: fxaaCode,
-  });
-  const destination = { texture: display, transfer: 'srgb' };
-  await camera.prepareDestination(destination);
-
   const opaqueHook = scene.onAfterOpaque;
   scene.onAfterOpaque = () => {
     opaqueHook?.();
@@ -133,13 +97,6 @@ export async function installGalleryEffects(viewer) {
       { texture: scene.sceneRT.texture.getGPU() },
       [width, height, 1],
     );
-  };
-  const render = camera.render.bind(camera);
-  camera.render = target => {
-    if (target || camera.diagnosticMode) return render(target);
-    display.resize(viewer.canvas.width, viewer.canvas.height);
-    render(destination);
-    aa.render({ colorViews: [GPU.context.getCurrentTexture().createView()] });
   };
   return { setScale: scale => { settings.fields.scale.value = scale; } };
 }
