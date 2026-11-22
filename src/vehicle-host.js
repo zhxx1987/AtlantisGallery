@@ -30,11 +30,10 @@ export async function installVehicle(host,descriptor,modelURL){
  button.onclick=()=>mode.set(!mode.active);reset.onclick=()=>plugin?.reset();
  const module=await import(descriptor.module?new URL(descriptor.module,base).href:'./vehicles/'+descriptor.profile+'.js');
  plugin=await module.install({viewer,root,read,base,output,help,mode,loadAssets});
- const component={update:dt=>plugin.update?.(dt)};viewer.addComponent(component);
  // Loading remains in the same host and does not request cursor capture without a user gesture.
  await loadAssets();button.disabled=false;button.textContent='Start '+(descriptor.profile==='ember-29'?'Riding':'Driving');
- return {get enabled(){return mode.active;},getFocus:()=>plugin.focus?.(),exit:()=>mode.set(false),
-  dispose(){if(disposed)return;disposed=true;mode.dispose();plugin.dispose();viewer.removeComponent(component);for(const a of assets){a.root.visible=false;}section.remove();}};
+ return {get enabled(){return mode.active;},update:dt=>plugin.update?.(dt),getFocus:()=>plugin.focus?.(),exit:()=>mode.set(false),
+  dispose(){if(disposed)return;disposed=true;mode.dispose();plugin.dispose();for(const a of assets){a.root.visible=false;}section.remove();}};
 }
 export function inputs(mode,canvas,handlers){
  const abort=new AbortController(),keys=new Set(),physical=new Set(),blocked=new Set();

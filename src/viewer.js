@@ -32,6 +32,7 @@ export class GalleryViewer {
     await this.native.ready;
     this.effects = await installGalleryEffects(this.native);
     this.native.beforeRender = dt => {
+      this.vehicle?.update?.(dt);
       this.mixer?.update(dt);
       if (!this.vehicle?.enabled) this.motion?.update(dt);
       this.syncPose();
