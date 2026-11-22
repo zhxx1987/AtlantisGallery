@@ -130,7 +130,7 @@ export function installRendererControls(viewer,container,{onError=console.error,
    const target=spec.target??group.target,value=target==='ocean'?(spec.key in ocean?ocean[spec.key]:ocean.config[spec.key]):state?.[target]?.[spec.key];
    if(spec.type==='checkbox')input.checked=!!value;else input.value=Array.isArray(value)?value.join(', '):value??'';
    for(let index=0;index<sliders.length;index++){const {range,limits,part}=sliders[index];if(parts.length)part.value=value?.[index]??0;range.value=sliderPosition(limits,Number(part.value));}
-   note.textContent=group.id==='ocean'?(viewer.ocean?'海洋已加载 · 修改海况会重新计算频谱':'当前场景未加载海洋 · 控件保持显示'):group.id==='shadows'?`${viewer.shadows?.count??4} 级世界空间阴影，覆盖范围随场景自动适配`:'';
+   note.textContent=group.id==='ocean'?(viewer.ocean?'海洋已加载 · 修改海况会重新计算频谱':'当前场景未加载海洋 · 控件保持显示'):group.id==='shadows'?localized('shadowCoverageNote','{count} 级世界空间阴影，覆盖范围随场景自动适配').replace('{count}',String(viewer.shadows?.count??4)):'';
   }
  }
  const vegetation=document.createElement('details'),vegetationHeading=document.createElement('summary');vegetation.dataset.controlGroup='vegetation';vegetationHeading.textContent='植被';vegetation.append(vegetationHeading);

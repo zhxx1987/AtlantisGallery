@@ -1,6 +1,6 @@
 import { installRendererControls } from '../atlantis-renderer/frontend/webgpu/renderer_controls.js';
 
-const groups = ['lighting', 'clouds', 'exposure', 'ssao', 'fog', 'glow', 'shafts', 'antialiasing', 'shader-bevel'];
+const groups = ['lighting', 'clouds', 'exposure', 'ssao', 'fog', 'glow', 'shafts', 'shadows', 'antialiasing', 'shader-bevel'];
 const labels = {
   weatherPreset: 'Sky preset', custom: 'Current / Custom', clear: 'Clear', overcast: 'Overcast', sunset: 'Sunset',
   sliderSuffix: ' slider', componentSuffix: ' component ',
@@ -26,6 +26,9 @@ const labels = {
   lightShaftBloomScale: 'Bloom scale', lightShaftBloomThreshold: 'Bloom threshold',
   lightShaftBloomAngularRadius: 'Angular radius (°)', lightShaftBloomTint: 'Bloom tint (RGB)',
   lightShaftOverrideDirection: 'Direction override (zero uses sun)',
+  shadowsGroup: 'Cascaded Shadows', enabled: 'Enable cascaded shadows',
+  shadowMapSize: 'Resolution per cascade',
+  shadowCoverageNote: '{count} world-space cascades with scene-adaptive coverage',
   antialiasingGroup: 'Antialiasing', 'shader-bevelGroup': 'Shader Bevel', shaderBevel: 'Enable shader bevel',
   shaderBevelRadius: 'Radius (m)', shaderBevelStrength: 'Strength',
 };

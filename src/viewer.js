@@ -23,9 +23,7 @@ export class GalleryViewer {
   async init() {
     this.native = new Viewer(this.stage, undefined, {
       presentation: true,
-      singleShadow: true,
-      shadowMapSize: 2048,
-      shadowCasterBatching: false,
+      shadowMapSize: 4096,
       readGalleryMesh: async (url, signal) => {
         if (signal?.aborted || (url !== this.importUrl && !this.assetBuffers?.has(url))) throw Error('Model import was canceled');
         return { buffer: this.assetBuffers?.get(url) ?? this.importBuffer, metadata: { adapter: 'gallery-three-usd' } };
@@ -37,7 +35,6 @@ export class GalleryViewer {
       this.mixer?.update(dt);
       if (!this.vehicle?.enabled) this.motion?.update(dt);
       this.syncPose();
-      this.updateShadowFocus();
     };
 
     const canvas = this.native.canvas;
@@ -206,12 +203,6 @@ export class GalleryViewer {
     this.native.meshAsset.root.traverse(n=>{if(n.userData?.galleryFloor)n.visible=visible;});
   }
 
-  updateShadowFocus(){
-    if(!this.bounds)return;
-    const center=this.vehicle?.getFocus?.()??this.bounds.getCenter(new THREE.Vector3()).toArray();
-    this.native.shadowFocus={center,radius:Math.max(2,this.span*.8)};
-  }
-
   syncPose() {
     let changed = false;
     for (const { source, target } of this.pairs) {
@@ -226,7 +217,7 @@ export class GalleryViewer {
     }
     if (changed) {
       this.native.invalidateObjectTransforms([this.native.meshAsset.root]);
-      this.native.shadows.cascades[0].dirty = true;
+      for (const cascade of this.native.shadows.cascades) cascade.dirty = true;
       this.native.depthSnapshot = null;
     }
   }
