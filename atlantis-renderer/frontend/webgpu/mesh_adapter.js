@@ -206,6 +206,7 @@ export async function loadMesh(viewer,url,signal,{grassPatch=false,textureArray=
   const plantLOD=await ensurePlantLODs(sourceBuffer,{required:plant||grassPatch,signal,onProgress:stage=>viewer.options?.onLoadProgress?.(stage)});
   check(viewer,signal,id);buffer=plantLOD.buffer;
   const parsed=parseMeshGLB(buffer),table=materialCodeTable(parsed.json);
+  viewer.options?.prepareGalleryMesh?.(parsed,imported.metadata);
   const normalFrame=nativeImpostorNormalFrame(parsed.json);
   const nativePatch=isNativeGrassPatch(parsed.json);
   const resources={meshes:new Set(),geometries:new Set(),materials:new Set(),textures:new Set(),buffers:new Set()};let root,vegetation;

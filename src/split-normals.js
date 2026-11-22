@@ -1,10 +1,8 @@
-import { Float32BufferAttribute, Vector3 } from 'three';
+import { Float32BufferAttribute, Vector3 } from './three/build/three.core.js';
 
 // USD point indices preserve the original topology after the loader expands faces.
 export const usdPointIndices = new WeakMap();
-export const usdFaceNormals = new WeakSet();
 
-const CORNER_NORMAL_EPSILON = 1e-5;
 const nextCorner = corner => corner % 3 === 2 ? corner - 2 : corner + 1;
 
 function coincidentPoints(position) {
@@ -24,9 +22,7 @@ export function splitGeometryNormals(geometry, creaseDegrees = 45) {
   const count = index?.count ?? position?.count;
   if (!position || !count || count % 3 !== 0) return geometry;
 
-  const original = geometry.getAttribute('normal');
   const pointIDs = usdPointIndices.get(geometry) ?? coincidentPoints(position);
-  const hasAuthoredFaceNormals = usdFaceNormals.has(geometry);
   const vertices = new Uint32Array(count);
   const parents = new Uint32Array(count);
   for (let i = 0; i < count; i++) {
@@ -69,73 +65,44 @@ export function splitGeometryNormals(geometry, creaseDegrees = 45) {
   }
 
   const limit = Math.cos(creaseDegrees * Math.PI / 180);
-  const rebuild = new Uint8Array(count);
-  const authoredA = new Vector3(), authoredB = new Vector3();
-  function readAuthored(target, vertex) {
-    if (!original || vertex >= original.count) return false;
-    target.fromBufferAttribute(original, vertex);
-    const length = target.length();
-    if (!Number.isFinite(length) || length <= CORNER_NORMAL_EPSILON) return false;
-    target.divideScalar(length);
-    return true;
-  }
-  function connect(first, second, sharp) {
-    const hasA = readAuthored(authoredA, vertices[first]);
-    const hasB = readAuthored(authoredB, vertices[second]);
-    const authoredSplit = hasA && hasB && authoredA.dot(authoredB) < 1 - CORNER_NORMAL_EPSILON;
-    if (authoredSplit) return;
-    if (sharp && !(hasAuthoredFaceNormals && hasA && hasB)) {
-      rebuild[first] = rebuild[second] = 1;
-    } else if (!sharp) {
-      parents[find(second)] = find(first);
-    }
-  }
+  // Smoothing groups come from shared edges and triangle geometry alone.
   for (const { corner, other } of edges.values()) {
     if (other < 0) continue;
     a.fromArray(directions, corner - corner % 3);
     b.fromArray(directions, other - other % 3);
-    const sharp = a.dot(b) < limit - 1e-6;
-    connect(corner, nextCorner(other), sharp);
-    connect(nextCorner(corner), other, sharp);
+    if (a.dot(b) < limit - 1e-6) continue;
+    parents[find(nextCorner(other))] = find(corner);
+    parents[find(other)] = find(nextCorner(corner));
   }
 
   const weighted = new Float64Array(count * 3);
-  const rebuildGroup = new Uint8Array(count);
   for (let corner = 0; corner < count; corner++) {
     const group = find(corner);
-    if (rebuild[corner]) rebuildGroup[group] = 1;
     const dest = group * 3, face = corner - corner % 3;
     for (let axis = 0; axis < 3; axis++) weighted[dest + axis] += directions[face + axis] * angles[corner];
   }
 
   const perVertex = new Float32Array(position.count * 3);
   const perCorner = index ? new Float32Array(count * 3) : perVertex;
-  const visited = new Uint8Array(position.count);
+  const firstGroup = new Uint32Array(position.count);
   let needsSplit = false;
-  let changed = !original || original.count !== position.count;
   for (let corner = 0; corner < count; corner++) {
     const vertex = vertices[corner], group = find(corner);
-    const authored = readAuthored(a, vertex);
-    if (authored && !rebuildGroup[group]) normal.copy(a);
-    else normal.fromArray(weighted, group * 3).normalize();
+    normal.fromArray(weighted, group * 3).normalize();
     if (normal.lengthSq() === 0) {
       normal.fromArray(directions, corner - corner % 3);
       if (normal.lengthSq() === 0) normal.set(0, 1, 0);
     }
     normal.toArray(perCorner, corner * 3);
-    if (visited[vertex]) {
-      b.fromArray(perVertex, vertex * 3);
-      if (b.dot(normal) < 1 - CORNER_NORMAL_EPSILON) needsSplit = true;
+    if (firstGroup[vertex]) {
+      if (firstGroup[vertex] !== group + 1) needsSplit = true;
     } else {
-      visited[vertex] = 1;
+      firstGroup[vertex] = group + 1;
       normal.toArray(perVertex, vertex * 3);
     }
-    changed ||= !authored || a.dot(normal) < 1 - CORNER_NORMAL_EPSILON;
   }
   for (let vertex = 0; vertex < position.count; vertex++) {
-    if (visited[vertex]) continue;
-    if (!readAuthored(normal, vertex)) normal.set(0, 1, 0);
-    normal.toArray(perVertex, vertex * 3);
+    if (!firstGroup[vertex]) perVertex[vertex * 3 + 1] = 1;
   }
 
   const result = needsSplit ? geometry.toNonIndexed() : geometry;
@@ -146,7 +113,7 @@ export function splitGeometryNormals(geometry, creaseDegrees = 45) {
   }
   result.setAttribute('normal', new Float32BufferAttribute(needsSplit ? perCorner : perVertex, 3));
   // The native material can rebuild the tangent frame from the UV derivatives.
-  if (changed) result.deleteAttribute('tangent');
+  result.deleteAttribute('tangent');
   return result;
 }
 
@@ -162,6 +129,5 @@ export function prepareModelNormals(root, creaseDegrees) {
   for (const [source, result] of converted) {
     if (source !== result) source.dispose();
     usdPointIndices.delete(source);
-    usdFaceNormals.delete(source);
   }
 }

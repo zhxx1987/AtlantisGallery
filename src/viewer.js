@@ -6,6 +6,7 @@ import { Viewer } from '../atlantis-renderer/frontend/webgpu/viewer.js';
 import { MotionRuntime } from './motion.js';
 import { installGalleryEffects } from './view-effects.js';
 import { prepareModelNormals } from './split-normals.js';
+import { prepareNativeGalleryNormals } from './native-normals.js';
 import { installPythonVehicle } from './vehicle.js';
 import { installVehicle } from './vehicle-host.js';
 import { instanceAwareBounds } from '../atlantis-renderer/frontend/webgpu/scene_bounds.js';
@@ -26,7 +27,14 @@ export class GalleryViewer {
       shadowMapSize: 4096,
       readGalleryMesh: async (url, signal) => {
         if (signal?.aborted || (url !== this.importUrl && !this.assetBuffers?.has(url))) throw Error('Model import was canceled');
-        return { buffer: this.assetBuffers?.get(url) ?? this.importBuffer, metadata: { adapter: 'gallery-three-usd' } };
+        const asset = this.assetBuffers?.get(url);
+        return {
+          buffer: asset ?? this.importBuffer,
+          metadata: { adapter: 'gallery-three-usd', rebuildNormals: Boolean(asset || this.rawImport), creaseDegrees: this.rawImport?.normalCreaseDegrees },
+        };
+      },
+      prepareGalleryMesh: (parsed, metadata) => {
+        if (metadata.rebuildNormals) prepareNativeGalleryNormals(parsed.meshes, metadata.creaseDegrees);
       },
     });
     await this.native.ready;
@@ -166,6 +174,7 @@ export class GalleryViewer {
     if (!response.ok) throw Error('Vehicle model HTTP ' + response.status);
     this.importUrl = new URL(url, location.href).href;
     this.importBuffer = await response.arrayBuffer();
+    this.rawImport = spec;
     try {
       this.vehicle?.dispose();this.vehicle=null;
       this.motion?.dispose();this.motion=null;
@@ -191,7 +200,7 @@ export class GalleryViewer {
       this.vehicle=await installPythonVehicle(this.native,spec.logic,new URL(url,location.href).href,this.panel,on=>{if(courseRoot){courseRoot.visible=on;this.native.invalidateVisibility();}});
       return {meshes:0,errors:[]};
     } finally {
-      this.importUrl=null;this.importBuffer=null;
+      this.importUrl=null;this.importBuffer=null;this.rawImport=null;
     }
   }
 

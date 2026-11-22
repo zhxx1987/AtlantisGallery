@@ -1,5 +1,5 @@
 import { Float32BufferAttribute } from 'three';
-import { usdFaceNormals, usdPointIndices } from '../split-normals.js';
+import { usdPointIndices } from '../split-normals.js';
 
 export function setUSDMeshNormals(geometry, fields, pointIndices, faceCorners) {
   const count = geometry.getAttribute('position').count;
@@ -51,5 +51,4 @@ export function setUSDMeshNormals(geometry, fields, pointIndices, faceCorners) {
     }
   }
   geometry.setAttribute('normal', new Float32BufferAttribute(data, 3));
-  if (['faceVarying', 'uniform', 'constant'].includes(interpolation)) usdFaceNormals.add(geometry);
 }
