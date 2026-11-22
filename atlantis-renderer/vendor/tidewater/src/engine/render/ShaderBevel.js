@@ -56,7 +56,7 @@ export class ShaderBevel {
 		this.depth = new Texture({
 			label: 'shader bevel depth', format: depthFormat, usage: ['render', 'sample'],
 		});
-		this.params = new UniformBlock('BevelSettings', { radius: ['f32', 0.004], strength: ['f32', 0.65] });
+		this.params = new UniformBlock('BevelSettings', { radius: ['f32', 0.0177011], strength: ['f32', 0.635] });
 		this.module = new ShaderModule({
 			name: 'shaderBevel', uniforms: this.params, uniformName: 'bevelSettings',
 			bindings: { bevelDepth: { texture: this.depth } }, code,

@@ -8,7 +8,7 @@ const defaults=Object.freeze({ssao:true,ssaoRadius:1,ssaoIntensity:1,ssaoBias:.0
  lightShaftOcclusionDepthRange:700,lightShaftOcclusionMaskDarkness:.248,
  lightShaftBloomScale:2.19,lightShaftBloomThreshold:1,lightShaftBloomTint:[1,1,1],
  lightShaftBloomAngularRadius:12,lightShaftOverrideDirection:[0,0,0],
- fxaa:true,msaaSamples:4,shaderBevel:true,shaderBevelRadius:.004,shaderBevelStrength:.65});
+ fxaa:true,msaaSamples:4,shaderBevel:true,shaderBevelRadius:0.0177011,shaderBevelStrength:0.635});
                                                                          
                                                                                 
 const displayDefaults=Object.freeze({glow:1.182,bloom:3.28,bloomThreshold:1,

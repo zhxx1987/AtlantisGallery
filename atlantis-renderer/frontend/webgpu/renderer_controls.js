@@ -52,7 +52,7 @@ export const CONTROL_GROUPS=Object.freeze([
  {id:'shadows',label:'级联阴影',target:'shadows',controls:[b('enabled','启用级联阴影'),{...s('shadowMapSize','每级分辨率',[128,256,512,1024,2048,4096,8192]),target:'weather'}]},
  {id:'ocean',label:'海洋',target:'ocean',controls:[b('enabled','显示海洋'),b('paused','暂停海浪'),s('oceantype','海况',['deep','glass','tropical','storm']),n('stormylevel','风暴强度',0,1,.01),n('sealevel','海平面 m',-100000,100000),n('choppiness','波浪陡度',0,1,.01),v('winddirection','风向 XZ',2),n('seed','随机种子',0,2147483647,1),s('quality','质量',['low','medium','high']),n('maxDistance','最远距离 m',100,100000,100),b('wetness','岸边湿润'),b('spray','浪花粒子'),b('reflections','反射'),b('caustics','焦散'),n('causticShadowAttenuation','阴影内焦散',0,1,.05),n('causticCascadeMask','焦散级联掩码',1,15,1),n('causticMinimumStep','焦散柔化 m',1/128,2,.01),n('shoreShadowFadeDistance','岸边阴影渐变 m',0,20),n('shallowDepthDisplayMax','浅水显示上限 m',.01,20,.01),n('time','海浪回放时间 s',0,1e9,1)]},
  {id:'antialiasing',label:'抗锯齿',target:'post',controls:[b('fxaa','FXAA'),s('msaaSamples','MSAA',[1,4])]},
- {id:'shader-bevel',label:'Shader 倒角',target:'post',controls:[b('shaderBevel','启用倒角'),n('shaderBevelRadius','半径 m',.0001,1,.0001),n('shaderBevelStrength','强度',0,1,.01)]},
+ {id:'shader-bevel',label:'Shader 倒角',target:'post',controls:[b('shaderBevel','启用倒角'),n('shaderBevelRadius','半径 m',.0001,1,.0000001),n('shaderBevelStrength','强度',0,1,.001)]},
  {id:'camera-effects',label:'相机与成像',target:'post',controls:[{...n('renderScale','空间超采样倍率',1,2,.25),target:'rendering'},n('focalLength','镜头焦距 mm',1,2000,1),n('sensorWidth','传感器宽度 mm',1,200,1),n('focusDistance','对焦距离 m',.001,1e9),b('depthOfField','景深'),n('vignette','暗角',0,1,.01),n('grain','颗粒',0,1,.01)]},
 ]);
 
