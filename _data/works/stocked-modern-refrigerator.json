@@ -1,0 +1,30 @@
+{
+  "id": "stocked-modern-refrigerator",
+  "title": "Stocked Modern Refrigerator",
+  "creator": "zhxx1987",
+  "description": "A two-compartment stainless-steel refrigerator with two hinged doors, four sliding drawers and 33 food items. The controls download includes door interlocks, lighting, temperature settings, food handling and a separate MuJoCo simulation.",
+  "model": "https://zhxx1987.github.io/atlantis-stocked-modern-refrigerator/gallery-03427c19cb40feb27932ec79e55dac5c421644e3929c00d2344dc04b216933af/preview/modern_fridge.glb",
+  "thumbnail": "./models/stocked-modern-refrigerator/preview.webp",
+  "downloads": [
+    {
+      "kind": "model",
+      "label": "Download Model",
+      "url": "https://github.com/zhxx1987/atlantis-stocked-modern-refrigerator/releases/download/gallery-03427c19cb40feb27932ec79e55dac5c421644e3929c00d2344dc04b216933af/model.zip"
+    },
+    {
+      "kind": "controls",
+      "label": "Download Controls",
+      "url": "https://github.com/zhxx1987/atlantis-stocked-modern-refrigerator/releases/download/gallery-03427c19cb40feb27932ec79e55dac5c421644e3929c00d2344dc04b216933af/controls.zip"
+    },
+    {
+      "kind": "modeling-source",
+      "label": "Download Modeling Source",
+      "url": "https://github.com/zhxx1987/atlantis-stocked-modern-refrigerator/releases/download/gallery-03427c19cb40feb27932ec79e55dac5c421644e3929c00d2344dc04b216933af/modeling-code.zip"
+    }
+  ],
+  "packageLayout": "model-controls-source/1",
+  "operableVehicle": false,
+  "interaction": "https://zhxx1987.github.io/atlantis-stocked-modern-refrigerator/gallery-03427c19cb40feb27932ec79e55dac5c421644e3929c00d2344dc04b216933af/interaction.json",
+  "assetRepository": "https://github.com/zhxx1987/atlantis-stocked-modern-refrigerator",
+  "publishedAt": "2026-11-23T11:21:29.721067+00:00"
+}
