@@ -184,7 +184,18 @@ def stage_package(manifest, output):
         }:
             raise ValueError('Use a supported Gallery interaction schema.')
         logic = spec.get('logic')
-        if logic is not None:
+        if isinstance(logic, dict) and logic.get('schema') == 'atlantis-native-oven/1':
+            if operable or logic != {'schema': 'atlantis-native-oven/1', 'profile': 'electric-oven', 'scene': 'scene.json'}:
+                raise ValueError('Use the supported native electric oven with its packaged scene.json.')
+            scene_name = posixpath.join(posixpath.dirname(model), 'scene.json')
+            if scene_name not in preview:
+                raise ValueError('List the oven scene.json in previewFiles.')
+            scene = read_json(preview[scene_name])
+            assets = scene.get('assets', [])
+            if (scene.get('schema') != 'aps-webgpu-scene/1' or scene.get('oven_controls', {}).get('schema') != 'atlantis-oven/1'
+                    or len(assets) != 1 or assets[0].get('kind') != 'glb' or assets[0].get('file') != posixpath.basename(model)):
+                raise ValueError('The native oven scene must reference its preview GLB.')
+        elif logic is not None:
             if not isinstance(logic, dict) or not (
                 logic.get('profile') == 'microwave' or (
                     logic.get('schema') == 'atlantis-python-motion/1'

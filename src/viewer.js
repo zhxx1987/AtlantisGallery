@@ -61,6 +61,7 @@ export class GalleryViewer {
   }
 
   async load(url, spec = {}, name = url) {
+    if (spec.logic?.schema === 'atlantis-native-oven/1') return this.loadOven(url, spec.logic);
     if (spec.logic?.profile === 'tiger-ii') return this.loadVehicle(url, spec);
     this.vehicleScale = null;
     const extension = name.split(/[?#]/)[0].split('.').pop().toLowerCase();
@@ -130,6 +131,7 @@ export class GalleryViewer {
       this.importUrl = new URL('./gallery-mesh.glb', import.meta.url).href;
       const committed = await this.native.loadMeshCandidate(this.importUrl, undefined, { preservePose: true });
       if (!committed) throw Error('Model import was canceled');
+      this.releaseOven();
       this.vehicle?.dispose();this.vehicle=null;
       this.motion?.dispose();
       if (this.root) this.disposeModel(this.root);
@@ -169,6 +171,57 @@ export class GalleryViewer {
     }
   }
 
+  releaseOven() {
+    if (!this.oven) return;
+    this.oven.dispose();
+    this.oven = null;
+    this.ovenView = null;
+    this.native.clearSceneAssets();
+  }
+
+  async loadOven(url, logic) {
+    if (logic.profile !== 'electric-oven' || logic.scene !== 'scene.json') {
+      throw Error('Unsupported native oven configuration');
+    }
+    const { installOvenRuntime } = await import('../atlantis-renderer/frontend/webgpu/oven_runtime.js');
+    const modelUrl = new URL(url, location.href);
+    const sceneUrl = new URL(logic.scene, modelUrl);
+    const [modelResponse, sceneResponse] = await Promise.all([fetch(modelUrl), fetch(sceneUrl)]);
+    if (!modelResponse.ok || !sceneResponse.ok) throw Error('Could not load the oven model and scene');
+    const scene = await sceneResponse.json();
+    const asset = scene.assets?.[0];
+    if (scene.schema !== 'aps-webgpu-scene/1' || scene.oven_controls?.schema !== 'atlantis-oven/1' ||
+        scene.assets?.length !== 1 || asset.kind !== 'glb' || new URL(asset.file, sceneUrl).href !== modelUrl.href) {
+      throw Error('The oven scene does not match its preview model');
+    }
+    this.importBuffer = await modelResponse.arrayBuffer();
+    this.importUrl = modelUrl.href;
+    try {
+      const ok = await this.native.loadMeshCandidate(modelUrl.href, undefined, { preservePose: true });
+      if (!ok) throw Error('Oven load was canceled');
+      this.releaseOven();
+      this.vehicle?.dispose();
+      this.motion?.dispose();
+      if (this.root) this.disposeModel(this.root);
+      this.root = this.vehicle = this.motion = this.mixer = this.bounds = null;
+      this.pairs = [];
+      this.originals = [];
+      this.native.clearSceneAssets();
+      this.native.registerSceneAsset(asset.id, this.native.meshAsset, { url: modelUrl.href, tagRoot: false });
+      const bounds = instanceAwareBounds(this.native.meshAsset.root);
+      this.span = Math.max(...bounds.max.toArray().map((v, i) => v - bounds.min.toArray()[i]));
+      this.effects.setScale(this.span);
+      this.ovenView = scene.cameras?.[scene.initial_camera] ?? scene.camera;
+      this.native.setCamera(this.ovenView);
+      if (scene.environment?.post) this.native.renderPipeline.setOptions(scene.environment.post);
+      this.panel.replaceChildren();
+      this.oven = installOvenRuntime(this.native, scene.oven_controls, this.panel);
+      return { meshes: 0, errors: [] };
+    } finally {
+      this.importBuffer = this.importUrl = null;
+    }
+  }
+
   async loadVehicle(url, spec) {
     const response = await fetch(url);
     if (!response.ok) throw Error('Vehicle model HTTP ' + response.status);
@@ -176,6 +229,7 @@ export class GalleryViewer {
     this.importBuffer = await response.arrayBuffer();
     this.rawImport = spec;
     try {
+      this.releaseOven();
       this.vehicle?.dispose();this.vehicle=null;
       this.motion?.dispose();this.motion=null;
       this.mixer=null;this.pairs=[];
@@ -258,6 +312,7 @@ export class GalleryViewer {
   }
 
   frame() {
+    if (this.oven) return this.native.setCamera(this.ovenView);
     this.vehicle?.exit();
     if (!this.bounds) return;
     const center = this.bounds.getCenter(new THREE.Vector3());
