@@ -2,29 +2,29 @@
   "id": "electric-oven-rtx-5090",
   "title": "Electric Oven with GeForce RTX 5090 Founders Edition",
   "creator": "zhxx1987",
-  "description": "A 60 cm electric oven with a tray-mounted GeForce RTX 5090 Founders Edition and 198 modeled parts. Select an inspection pose to open the door or extend the GPU tray or wire rack. Both front dials can be turned. Download the controls to run the oven simulation with heating modes, fans, cavity light, timer and door interlocks.",
-  "model": "https://zhxx1987.github.io/atlantis-electric-oven-rtx-5090/gallery-e83ccce0386e008f6b82d817d99f688e6456ddcd3afef8b81dbe38175c53dedd/preview/oven.glb",
+  "description": "Operate a 60 cm electric oven with a GeForce RTX 5090 Founders Edition on the tray. Choose a cooking mode, set the temperature and timer, or click the oven itself. The working panel shows cavity temperature, fan and heater states, and door, rack and tray positions.",
+  "model": "https://zhxx1987.github.io/atlantis-electric-oven-rtx-5090/gallery-2d32daf7bc49781ae44252462bedca600c8546d02bb7d20833661f6ff8338958/preview/oven.glb",
   "thumbnail": "./models/electric-oven-rtx-5090/preview.png",
   "downloads": [
     {
       "kind": "model",
       "label": "Download Model",
-      "url": "https://github.com/zhxx1987/atlantis-electric-oven-rtx-5090/releases/download/gallery-e83ccce0386e008f6b82d817d99f688e6456ddcd3afef8b81dbe38175c53dedd/model.zip"
+      "url": "https://github.com/zhxx1987/atlantis-electric-oven-rtx-5090/releases/download/gallery-2d32daf7bc49781ae44252462bedca600c8546d02bb7d20833661f6ff8338958/model.zip"
     },
     {
       "kind": "controls",
       "label": "Download Controls",
-      "url": "https://github.com/zhxx1987/atlantis-electric-oven-rtx-5090/releases/download/gallery-e83ccce0386e008f6b82d817d99f688e6456ddcd3afef8b81dbe38175c53dedd/controls.zip"
+      "url": "https://github.com/zhxx1987/atlantis-electric-oven-rtx-5090/releases/download/gallery-2d32daf7bc49781ae44252462bedca600c8546d02bb7d20833661f6ff8338958/controls.zip"
     },
     {
       "kind": "modeling-source",
       "label": "Download Modeling Source",
-      "url": "https://github.com/zhxx1987/atlantis-electric-oven-rtx-5090/releases/download/gallery-e83ccce0386e008f6b82d817d99f688e6456ddcd3afef8b81dbe38175c53dedd/modeling-code.zip"
+      "url": "https://github.com/zhxx1987/atlantis-electric-oven-rtx-5090/releases/download/gallery-2d32daf7bc49781ae44252462bedca600c8546d02bb7d20833661f6ff8338958/modeling-code.zip"
     }
   ],
   "packageLayout": "model-controls-source/1",
   "operableVehicle": false,
-  "interaction": "https://zhxx1987.github.io/atlantis-electric-oven-rtx-5090/gallery-e83ccce0386e008f6b82d817d99f688e6456ddcd3afef8b81dbe38175c53dedd/interaction.json",
+  "interaction": "https://zhxx1987.github.io/atlantis-electric-oven-rtx-5090/gallery-2d32daf7bc49781ae44252462bedca600c8546d02bb7d20833661f6ff8338958/interaction.json",
   "assetRepository": "https://github.com/zhxx1987/atlantis-electric-oven-rtx-5090",
   "publishedAt": "2026-11-23T16:29:02.270466+00:00"
 }
