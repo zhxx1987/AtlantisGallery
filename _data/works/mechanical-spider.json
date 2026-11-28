@@ -1,0 +1,39 @@
+{
+  "id": "mechanical-spider",
+  "title": "Mechanical Spider",
+  "creator": "zhxx1987",
+  "description": "An eight-legged inspection robot with folded red metal armor, articulated hydraulic legs and a suspended abdomen. Start Driving to walk, turn the camera and see the body settle under braking.",
+  "vehicleController": {
+    "schema": "atlantis-gallery-vehicle/1",
+    "renderer": "gallery-shared",
+    "thirdPersonCursor": "hidden",
+    "base": "https://zhxx1987.github.io/atlantis-mechanical-spider/gallery-1f22701f09222d01ceda478d9b1c8d3abe450ca99e64500d649c0cba8d1baa03/preview/walk/",
+    "module": "controller.js",
+    "assets": {
+      "course": "floor.glb"
+    }
+  },
+  "model": "https://zhxx1987.github.io/atlantis-mechanical-spider/gallery-1f22701f09222d01ceda478d9b1c8d3abe450ca99e64500d649c0cba8d1baa03/preview/Mechanical-Spider.glb",
+  "thumbnail": "./models/mechanical-spider/preview.webp",
+  "downloads": [
+    {
+      "kind": "model",
+      "label": "Download Model",
+      "url": "https://github.com/zhxx1987/atlantis-mechanical-spider/releases/download/gallery-1f22701f09222d01ceda478d9b1c8d3abe450ca99e64500d649c0cba8d1baa03/model.zip"
+    },
+    {
+      "kind": "controls",
+      "label": "Download Controls",
+      "url": "https://github.com/zhxx1987/atlantis-mechanical-spider/releases/download/gallery-1f22701f09222d01ceda478d9b1c8d3abe450ca99e64500d649c0cba8d1baa03/controls.zip"
+    },
+    {
+      "kind": "modeling-source",
+      "label": "Download Modeling Source",
+      "url": "https://github.com/zhxx1987/atlantis-mechanical-spider/releases/download/gallery-1f22701f09222d01ceda478d9b1c8d3abe450ca99e64500d649c0cba8d1baa03/modeling-code.zip"
+    }
+  ],
+  "packageLayout": "model-controls-source/1",
+  "operableVehicle": true,
+  "assetRepository": "https://github.com/zhxx1987/atlantis-mechanical-spider",
+  "publishedAt": "2026-11-28T16:32:40.826062+00:00"
+}
